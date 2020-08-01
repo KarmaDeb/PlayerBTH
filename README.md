@@ -1,0 +1,1 @@
+Thanks everyone who used and supported the plugin, I'll keep bringing it support, but won't do it constantly

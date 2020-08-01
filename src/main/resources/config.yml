@@ -1,0 +1,27 @@
+Ver: 4
+Song:
+  enabled: true
+  Name: Birthday
+Firework:
+  enabled: true
+  power: 2
+  amount: 3
+DataSys: FILE
+Update:
+  NotifyUpdated: false
+  Changelog: true
+  Interval: 5
+  UpdateFolder: true
+MySQL:
+  Host: localhost
+  Port: 3306
+  User: root
+  Password: ""
+  Database: server_database
+  Table: bth_birthday
+  SSL: false
+  Connection:
+    Min: 3
+    Max: 10
+    TimeOut: 40
+    LifeTime: 300

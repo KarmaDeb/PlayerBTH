@@ -1,0 +1,9 @@
+player:
+  - "pay 500 {player}"
+  - "msg {player} &aHappy birthday!"
+  - "[player] spawn"
+console:
+  - "eco give {player} 5000"
+  - "bc &aIt's &7{player}&a birthday!"
+message:
+  - "&aHappy birthday Mr&7{player}"
