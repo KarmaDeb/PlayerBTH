@@ -217,7 +217,7 @@ public final class User implements PlayerBTH, Files {
             List<String> runByOthers = new ArrayList<>();
             List<String> runByPlayer = new ArrayList<>();
 
-            for (String str : commands.getList("Player")) {
+            for (String str : commands.getList("player")) {
                 if (!str.split(" ")[0].toLowerCase().equals("[player]")) {
                     runByOthers.add("/" + str.replace("{player}", Objects.requireNonNull(player.getName())));
                 } else {
@@ -228,10 +228,10 @@ public final class User implements PlayerBTH, Files {
                 new User(online).executeCommands(runByOthers);
             }
             executeCommands(runByPlayer);
-            for (String str : commands.getList("Console")) {
+            for (String str : commands.getList("console")) {
                 plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), str.replace("{player}", Objects.requireNonNull(player.getName())));
             }
-            for (String str : commands.getList("Messages")) {
+            for (String str : commands.getList("messages")) {
                 send(str.replace("{player}", Objects.requireNonNull(player.getName())));
             }
 
