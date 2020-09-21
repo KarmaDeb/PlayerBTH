@@ -1,5 +1,6 @@
 package ml.karmaconfigs.playerbth.Utils;
 
+import ml.karmaconfigs.API.Spigot.KarmaYaml.FileCopy;
 import ml.karmaconfigs.playerbth.Commands.StaffCommands;
 import ml.karmaconfigs.playerbth.Commands.UserCommands;
 import ml.karmaconfigs.playerbth.Events.PlayerJoinEvent;
@@ -7,9 +8,7 @@ import ml.karmaconfigs.playerbth.Metrics.Metrics;
 import ml.karmaconfigs.playerbth.PlayerBTH;
 import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
 import ml.karmaconfigs.playerbth.Utils.Birthday.Month;
-import ml.karmaconfigs.playerbth.Utils.Files.Config;
 import ml.karmaconfigs.playerbth.Utils.Files.Files;
-import ml.karmaconfigs.playerbth.Utils.Files.Messages;
 import ml.karmaconfigs.playerbth.Utils.Files.YamlCreator;
 import ml.karmaconfigs.playerbth.Utils.MySQL.SQLPool;
 import ml.karmaconfigs.playerbth.Version.UpdaterFunction;
@@ -21,6 +20,18 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
+
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
 
 public class PBTHPlugin implements PlayerBTH, Files {
 
@@ -80,10 +91,20 @@ public class PBTHPlugin implements PlayerBTH, Files {
      * Initialize the files
      */
     private void initFiles() {
-        new Config();
-        new Messages();
+        File config_yml = new File(plugin.getDataFolder(), "config.yml");
+        File messages_yml = new File(plugin.getDataFolder(), "messages.yml");
 
-        YamlCreator creator = new YamlCreator("commands.yml", true);
+        FileCopy config_copy = new FileCopy(plugin, "config.yml");
+        config_copy.setDirCreatedMessage("&7[ &bPlayerBTH &7] &7INFO: &bCreated directory {path}");
+        config_copy.setFileCreatedMessage("&7[ &bPlayerBTH &7] &7INFO: &bCreated file {path}");
+        FileCopy messages_copy = new FileCopy(plugin, "messages.yml");
+        if (config_copy.copy(config_yml)) {
+            Server.send("Copied config.yml file and comments", Server.AlertLevel.INFO);
+        }
+        if (messages_copy.copy(messages_yml)) {
+            Server.send("Copied messages.yml file and comments", Server.AlertLevel.INFO);
+        }
+        YamlCreator creator = new YamlCreator("commands.yml", "commands.yml");
         creator.createFile();
         creator.setDefaults();
         creator.saveFile();

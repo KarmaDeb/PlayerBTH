@@ -5,7 +5,9 @@ import ml.karmaconfigs.playerbth.PlayerBTH;
 import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
 import ml.karmaconfigs.playerbth.Utils.Birthday.Month;
 import ml.karmaconfigs.playerbth.Utils.DataSys;
+import ml.karmaconfigs.playerbth.Utils.Files.Config;
 import ml.karmaconfigs.playerbth.Utils.Files.Files;
+import ml.karmaconfigs.playerbth.Utils.Files.Messages;
 import ml.karmaconfigs.playerbth.Utils.MySQL.Migration;
 import ml.karmaconfigs.playerbth.Utils.MySQL.SQLPool;
 import ml.karmaconfigs.playerbth.Utils.Server;
@@ -24,14 +26,26 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
 
+public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
 
     private final Permission help = new Permission("playerbirthday.help", PermissionDefault.FALSE);
     private final Permission dump = new Permission("playerbirthday.dump", PermissionDefault.FALSE);
     private final Permission info = new Permission("playerbirthday.info", PermissionDefault.FALSE);
     private final Permission migrate = new Permission("playerbirthday.migrate", PermissionDefault.FALSE);
     private final Permission celebrate = new Permission("playerbirthday.celebrate", PermissionDefault.FALSE);
+    private final Permission reload = new Permission("playerbirthday.reload", PermissionDefault.FALSE);
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String arg, String[] args) {
@@ -210,10 +224,27 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                                 sendHelpMessage(player, "celebrate");
                                             }
                                         } else {
-                                            sendInvalidArgsMessage(player);
+                                            user.send(messages.prefix() + messages.permission(celebrate));
                                         }
                                     } else {
-                                        user.send(messages.prefix() + messages.permission(celebrate));
+                                        if (args[0].equals("reload")) {
+                                            if (player.hasPermission(reload)) {
+                                                if (Config.manager.reload()) {
+                                                    user.send("&f[ &bPlayerBTH &f] &7INFO: &bReloaded config.yml");
+                                                } else {
+                                                    user.send("&f[ &bPlayerBTH &f] &4ERROR&7: &cCouldn't reload config.yml");
+                                                }
+                                                if (Messages.manager.reload()) {
+                                                    user.send("&f[ &bPlayerBTH &f] &7INFO: &bReloaded messages.yml");
+                                                } else {
+                                                    user.send("&f[ &bPlayerBTH &f] &4ERROR&7: &cCouldn't reload messages.yml");
+                                                }
+                                            } else {
+                                                user.send(messages.prefix() + messages.permission(reload));
+                                            }
+                                        } else {
+                                            sendInvalidArgsMessage(player);
+                                        }
                                     }
                                 }
                             }
@@ -373,7 +404,20 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                             sendHelpMessage("celebrate");
                                         }
                                     } else {
-                                        sendInvalidArgsMessage();
+                                        if (args[0].equals("reload")) {
+                                            if (Config.manager.reload()) {
+                                                Server.send("Reloaded config.yml", Server.AlertLevel.INFO);
+                                            } else {
+                                                Server.send("Couldn't reload config.yml", Server.AlertLevel.ERROR);
+                                            }
+                                            if (Messages.manager.reload()) {
+                                                Server.send("Reloaded messages.yml", Server.AlertLevel.INFO);
+                                            } else {
+                                                Server.send("Couldn't reload messages.yml", Server.AlertLevel.ERROR);
+                                            }
+                                        } else {
+                                            sendInvalidArgsMessage();
+                                        }
                                     }
                                 }
                             }
@@ -480,6 +524,18 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
         }
     }
 }
+
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
 
 final class PropertyReader implements PlayerBTH {
 

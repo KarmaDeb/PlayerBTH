@@ -7,6 +7,15 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 
+/**
+ * Private GSA code
+ *
+ * The use of this code
+ * without GSA team authorization
+ * will be a violation of
+ * terms of use determined
+ * in <a href="https://karmaconfigs.ml/license/"> here </a>
+ */
 public final class DownloadLatest implements PlayerBTH {
 
     private final File update = new File(plugin.getServer().getWorldContainer() + "/plugins/update");

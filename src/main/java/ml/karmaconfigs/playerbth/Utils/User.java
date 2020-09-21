@@ -21,13 +21,27 @@ import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-@SuppressWarnings("unused")
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
+
 public final class User implements PlayerBTH, Files {
 
     private final static ArrayList<UUID> celebrated = new ArrayList<>();
@@ -203,7 +217,7 @@ public final class User implements PlayerBTH, Files {
             List<String> runByOthers = new ArrayList<>();
             List<String> runByPlayer = new ArrayList<>();
 
-            for(String str : commands.getList("player")) {
+            for (String str : commands.getList("Player")) {
                 if (!str.split(" ")[0].toLowerCase().equals("[player]")) {
                     runByOthers.add("/" + str.replace("{player}", Objects.requireNonNull(player.getName())));
                 } else {
@@ -214,17 +228,26 @@ public final class User implements PlayerBTH, Files {
                 new User(online).executeCommands(runByOthers);
             }
             executeCommands(runByPlayer);
-            for (String str : commands.getList("console")) {
+            for (String str : commands.getList("Console")) {
                 plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), str.replace("{player}", Objects.requireNonNull(player.getName())));
             }
-            for (String str : commands.getList("message")) {
+            for (String str : commands.getList("Messages")) {
                 send(str.replace("{player}", Objects.requireNonNull(player.getName())));
             }
 
             celebrated.add(player.getUniqueId());
 
-            long timeLeft = 25 - Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> celebrated.remove(player.getUniqueId()), 20 * timeLeft);
+            String format = DateTime.now().getYear() + "/" + DateTime.now().getMonthOfYear() + "/" + DateTime.now().getDayOfMonth() + " " + DateTime.now().getHourOfDay() + ":" + DateTime.now().getMinuteOfHour() + ":" + DateTime.now().getSecondOfMinute();
+
+            switch (sys) {
+                case FILE:
+                    PlayerFile pf = new PlayerFile(player);
+                    pf.write("Celebrated", format);
+                    break;
+                case MYSQL:
+                    utils.setCelebrate(format);
+                    break;
+            }
         }
     }
 
@@ -438,7 +461,37 @@ public final class User implements PlayerBTH, Files {
      * @return a boolean
      */
     public final boolean isCelebrated() {
-        return celebrated.contains(player.getUniqueId());
+        if (celebrated.contains(player.getUniqueId())) {
+            return true;
+        } else {
+            switch (sys) {
+                case FILE:
+                    PlayerFile pf = new PlayerFile(player);
+
+                    String data = pf.getVale("Celebrated", "").toString();
+                    if (!data.isEmpty()) {
+                        DateTimeFormatter now = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm:ss");
+                        DateTime time = now.parseDateTime(data);
+
+                        if (time.plusDays(1).isBeforeNow()) {
+                            if (time.getDayOfMonth() + 1 == DateTime.now().getDayOfMonth()) {
+                                String format = DateTime.now().year().get() + "/" + DateTime.now().monthOfYear().get() + "/" + DateTime.now().dayOfMonth().get() + " " + time.getHourOfDay() + ":" + time.getMinuteOfHour() + ":" + time.getSecondOfMinute();
+                                time = now.parseDateTime(format);
+
+                                return time.plusHours(24).isBeforeNow();
+                            } else {
+                                return true;
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                    return false;
+                case MYSQL:
+                    return utils.isCelebrated();
+            }
+        }
+        return false;
     }
 
     /**
@@ -501,6 +554,18 @@ public final class User implements PlayerBTH, Files {
     }
 }
 
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
+
 class Title {
     /**
      * Gets a NMS class
@@ -550,6 +615,18 @@ class Title {
         }
     }
 }
+
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
 
 final class PlayerFile implements PlayerBTH {
 

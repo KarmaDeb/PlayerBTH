@@ -5,6 +5,15 @@ import ml.karmaconfigs.playerbth.Utils.Files.Files;
 import ml.karmaconfigs.playerbth.Utils.Server;
 import org.bukkit.scheduler.BukkitRunnable;
 
+/**
+ * Private GSA code
+ *
+ * The use of this code
+ * without GSA team authorization
+ * will be a violation of
+ * terms of use determined
+ * in <a href="https://karmaconfigs.ml/license/"> here </a>
+ */
 public class UpdaterFunction implements PlayerBTH {
 
     private final int latest;

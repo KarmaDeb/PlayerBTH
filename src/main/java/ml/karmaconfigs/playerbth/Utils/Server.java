@@ -5,6 +5,15 @@ import ml.karmaconfigs.playerbth.PlayerBTH;
 import java.io.File;
 import java.io.FileWriter;
 
+/**
+ * Private GSA code
+ *
+ * The use of this code
+ * without GSA team authorization
+ * will be a violation of
+ * terms of use determined
+ * in <a href="https://karmaconfigs.ml/license/"> here </a>
+ */
 public interface Server extends PlayerBTH {
 
     enum AlertLevel {
@@ -33,7 +42,7 @@ public interface Server extends PlayerBTH {
                 send("&f[ &bPlayerBTH &f] &4ERROR&7: &c" + message);
                 break;
             default:
-                send("&f[ &bPlayerBTH &f] &7Info&f: &b" + message);
+                send("&f[ &bPlayerBTH &f] &7INFO&f: &b" + message);
                 break;
         }
     }
@@ -52,7 +61,7 @@ public interface Server extends PlayerBTH {
                 send("&f[ &bPlayerBTH &f] &4ERROR&7: &c" + message);
                 break;
             default:
-                send("&f[ &bPlayerBTH &f] &7Info&f: &b" + message);
+                send("&f[ &bPlayerBTH &f] &7INFO&f: &b" + message);
                 break;
         }
     }

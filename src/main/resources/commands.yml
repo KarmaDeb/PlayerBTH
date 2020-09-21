@@ -5,5 +5,5 @@ player:
 console:
   - "eco give {player} 5000"
   - "bc &aIt's &7{player}&a birthday!"
-message:
+messages:
   - "&aHappy birthday Mr&7{player}"

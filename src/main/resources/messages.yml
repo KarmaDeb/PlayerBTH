@@ -1,4 +1,13 @@
-Ver: 2
+##################################
+#                                #
+#     PlayerBirthday - Karma     #
+#                                #
+#                                #
+#        Celebrate users         #
+#           birthdays            #
+#                                #
+##################################
+
 Prefix: "&bBirthday &7&l➡ "
 Set: "&aYour birthday have been set on &7{day}&f/&7{month}"
 SetAge: "&aYour birthday have been set on &7{day}&f/&7{month} &a- &7{age}&a years old"

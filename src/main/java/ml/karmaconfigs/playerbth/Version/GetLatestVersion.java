@@ -3,7 +3,6 @@ package ml.karmaconfigs.playerbth.Version;
 import ml.karmaconfigs.playerbth.Utils.Server;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -11,7 +10,15 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-@SuppressWarnings("all")
+/**
+ * Private GSA code
+ *
+ * The use of this code
+ * without GSA team authorization
+ * will be a violation of
+ * terms of use determined
+ * in <a href="https://karmaconfigs.ml/license/"> here </a>
+ */
 public class GetLatestVersion {
 
     public static final String VERSION = "Latest version getter";

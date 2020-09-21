@@ -1,78 +1,52 @@
 package ml.karmaconfigs.playerbth.Utils.Files;
 
+import ml.karmaconfigs.API.Spigot.KarmaYaml.FileCopy;
+import ml.karmaconfigs.API.Spigot.KarmaYaml.YamlReloader;
 import ml.karmaconfigs.playerbth.PlayerBTH;
 import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
 import ml.karmaconfigs.playerbth.Utils.Birthday.Days;
 import ml.karmaconfigs.playerbth.Utils.Birthday.Month;
-import ml.karmaconfigs.playerbth.Utils.Server;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 
 import java.io.File;
 import java.util.HashMap;
 
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
+
 public final class Messages implements PlayerBTH {
 
-    private final File file = new File(plugin.getDataFolder(), "messages.yml");
-    private final FileConfiguration messages = YamlConfiguration.loadConfiguration(file);
+    private final static File file = new File(plugin.getDataFolder(), "messages.yml");
+    private final static FileConfiguration messages = YamlConfiguration.loadConfiguration(file);
 
-    public Messages() {
-        try {
-            if (messages.getInt("Ver") != 2) {
-                File backupsFolder = new File(plugin.getDataFolder() + "/backups");
-                if (!backupsFolder.exists()) {
-                    if (backupsFolder.mkdirs()) {
-                        Server.send("Created backups folder", Server.AlertLevel.INFO);
-                    }
+    public interface manager {
+
+        static boolean reload() {
+            try {
+                YamlReloader reloader = new YamlReloader(plugin, file, "messages.yml");
+                if (reloader.reloadAndCopy()) {
+                    messages.loadFromString(reloader.getYamlString());
+                    return true;
                 }
-
-
-                int old = 0;
-                File[] files = backupsFolder.listFiles();
-                if (files != null) {
-                    for (File file : files) {
-                        String name = file.getName();
-                        if (name.contains("_")) {
-                            if (name.split("_")[0].equals("messages-old")) {
-                                old++;
-                            }
-                        }
-                    }
-                }
-
-                int amount = old + 1;
-                String amountStr;
-                if (amount <= 9) {
-                    amountStr = "0" + amount;
-                } else {
-                    amountStr = String.valueOf(amount);
-                }
-
-                File newMessages = new File(plugin.getDataFolder() + "/backups", "messages-old_" + amountStr + ".yml");
-                String path = newMessages.getPath().replaceAll("\\\\", "/");
-
-                if (file.renameTo(newMessages)) {
-                    Server.send("Updated messages.yml, have been renamed to " + path, Server.AlertLevel.WARNING);
-                }
-
-                YamlCreator creator = new YamlCreator("messages.yml", true);
-                creator.createFile();
-                creator.setDefaults();
-                creator.saveFile();
-
-                Files.copyValues(newMessages, creator.getFile(), "Ver");
+            } catch (InvalidConfigurationException e) {
+                FileCopy copy = new FileCopy(plugin, "messages.yml");
+                copy.copy(file);
             }
-        } catch (Throwable e) {
-            e.printStackTrace();
+            return false;
         }
-
-        YamlCreator creator = new YamlCreator("messages.yml", true);
-        creator.createFile();
-        creator.setDefaults();
-        creator.saveFile();
     }
 
     private String get(String path) {

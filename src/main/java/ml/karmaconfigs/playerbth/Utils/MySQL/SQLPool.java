@@ -9,7 +9,15 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-@SuppressWarnings("unused")
+/**
+ * Private GSA code
+ *
+ * The use of this code
+ * without GSA team authorization
+ * will be a violation of
+ * terms of use determined
+ * in <a href="https://karmaconfigs.ml/license/"> here </a>
+ */
 public final class SQLPool {
 
     private static int max = 3, min = 10, timeout = 40, lifetime = 300;
@@ -140,8 +148,8 @@ public final class SQLPool {
         PreparedStatement statement = null;
         try {
             connection = dataSource.getConnection();
-            statement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS " + table + " " + "(PLAYER text, UUID varchar(200), PASSWORD text, " +
-                    "FAON boolean, GAUTH text, FLY boolean)");
+            statement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS " + table + " " + "(UUID text, BIRTHDAY text, AGE integer, " +
+                    "NOTIFY boolean, CELEBRATE text)");
 
             statement.executeUpdate();
             updateTables();
@@ -194,6 +202,11 @@ public final class SQLPool {
             }
             if (columnExists("CELEBRATED")) {
                 statement = connection.prepareStatement("ALTER TABLE " + table + " " + "DROP CELEBRATED");
+                statement.executeUpdate();
+                changes = true;
+            }
+            if (!columnExists("CELEBRATE")) {
+                statement = connection.prepareStatement("ALTER TABLE " + table + " " + "ADD CELEBRATE text");
                 statement.executeUpdate();
                 changes = true;
             }

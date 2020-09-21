@@ -5,6 +5,9 @@ import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
 import ml.karmaconfigs.playerbth.Utils.Birthday.Month;
 import ml.karmaconfigs.playerbth.Utils.Server;
 import org.bukkit.OfflinePlayer;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,6 +15,18 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.UUID;
+
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
 
 public final class Utils implements PlayerBTH {
 
@@ -69,12 +84,13 @@ public final class Utils implements PlayerBTH {
             ResultSet results = statement.executeQuery();
             results.next();
             if (!userExists()) {
-                PreparedStatement add = connection.prepareStatement("INSERT INTO " + table + "(UUID,BIRTHDAY,AGE,NOTIFY) VALUE (?,?,?,?)");
+                PreparedStatement add = connection.prepareStatement("INSERT INTO " + table + "(UUID,BIRTHDAY,AGE,NOTIFY,CELEBRATE) VALUE (?,?,?,?,?)");
 
                 add.setString(1, uuid);
                 add.setString(2, "00-00");
                 add.setInt(3, 1);
                 add.setBoolean(4, true);
+                add.setString(5, "");
                 add.executeUpdate();
             }
         } catch (Throwable e) {
@@ -195,6 +211,28 @@ public final class Utils implements PlayerBTH {
             statement.executeUpdate();
         } catch (Throwable e) {
             Server.send("An internal error occurred while setting MySQL user notifications", Server.AlertLevel.ERROR);
+            Server.send("&c" + e.fillInStackTrace());
+            for (StackTraceElement stack : e.getStackTrace()) {
+                Server.send("&b                       " + stack);
+            }
+        } finally {
+            SQLPool.close(connection, statement);
+        }
+    }
+
+    public final void setCelebrate(String dateFormat) {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        try {
+            connection = SQLPool.getBucket().getConnection();
+            statement = Objects.requireNonNull(connection).prepareStatement("UPDATE " + table + " SET CELEBRATE=? WHERE UUID=?");
+
+            statement.setString(2, uuid);
+            statement.setString(1, dateFormat);
+
+            statement.executeUpdate();
+        } catch (Throwable e) {
+            Server.send("An internal error occurred while setting MySQL user celebration date", Server.AlertLevel.ERROR);
             Server.send("&c" + e.fillInStackTrace());
             for (StackTraceElement stack : e.getStackTrace()) {
                 Server.send("&b                       " + stack);
@@ -355,6 +393,52 @@ public final class Utils implements PlayerBTH {
         } finally {
             SQLPool.close(connection, statement);
         }
+    }
+
+    /**
+     * Check if the player last celebration date
+     * compared with today's date is a new day
+     *
+     * @return  a boolean
+     */
+    public final boolean isCelebrated() {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        try {
+            connection = SQLPool.getBucket().getConnection();
+            statement = Objects.requireNonNull(connection).prepareStatement("SELECT * FROM " + table + " WHERE UUID=?");
+
+            statement.setString(1, uuid);
+            ResultSet results = statement.executeQuery();
+            results.next();
+            String data = results.getString("CELEBRATE");
+            if (!data.isEmpty()) {
+                DateTimeFormatter now = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm:ss");
+                DateTime time = now.parseDateTime(data);
+
+                if (time.plusDays(1).isBeforeNow()) {
+                    if (time.getDayOfMonth() + 1 == DateTime.now().getDayOfMonth()) {
+                        String format = DateTime.now().year().get() + "/" + DateTime.now().monthOfYear().get() + "/" + DateTime.now().dayOfMonth().get() + " " + time.getHourOfDay() + ":" + time.getMinuteOfHour() + ":" + time.getSecondOfMinute();
+                        time = now.parseDateTime(format);
+
+                        return time.plusHours(24).isBeforeNow();
+                    } else {
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        } catch (Throwable e) {
+            Server.send("An internal error occurred while getting MySQL user celebrate date", Server.AlertLevel.ERROR);
+            Server.send("&c" + e.fillInStackTrace());
+            for (StackTraceElement stack : e.getStackTrace()) {
+                Server.send("&b                       " + stack);
+            }
+        } finally {
+            SQLPool.close(connection, statement);
+        }
+        return false;
     }
 
     /**
