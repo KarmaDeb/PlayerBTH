@@ -1,7 +1,12 @@
 package ml.karmaconfigs.playerbth;
 
-import ml.karmaconfigs.playerbth.Utils.PBTHPlugin;
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.common.JarInjector;
+import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.playerbth.utils.PBTHPlugin;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.File;
 
 /*
 GNU LESSER GENERAL PUBLIC LICENSE
@@ -17,20 +22,30 @@ GNU LESSER GENERAL PUBLIC LICENSE
 
 public final class Main extends JavaPlugin {
 
+    private final static PBTHPlugin plugin = new PBTHPlugin();
+
     @Override
     public void onEnable() {
-        DependencyLoader jodaLoader = new DependencyLoader();
-        if (jodaLoader.injectJodaTime()) {
-            new PBTHPlugin().initialize();
-            System.out.println("Executing PlayerBTH.jar in " + PlayerBTH.getJarName());
-        } else {
-            System.out.println("Couldn't inject Joda Time into PlayerBTH");
+        File dependency = new File(getDataFolder() + "/libs/", "JodaTimeV21010.jar");
+        try {
+            JarInjector injector = new JarInjector(dependency);
+            if (!dependency.exists())
+                injector.download("https://github.com/JodaOrg/joda-time/releases/download/v2.10.10/joda-time-2.10.10.jar");
+
+            if (injector.inject(JavaPlugin.getProvidingPlugin(Main.class))) {
+                plugin.initialize();
+            } else {
+                Console.send(this, "Failed to inject JodaTime dependency", Level.GRAVE);
+                getPluginLoader().disablePlugin(this);
+            }
+        } catch (Throwable ex) {
+            Console.send(this, "Failed to inject JodaTime dependency", Level.GRAVE);
             getPluginLoader().disablePlugin(this);
         }
     }
 
     @Override
     public void onDisable() {
-        new PBTHPlugin().stop();
+        plugin.stop();
     }
 }

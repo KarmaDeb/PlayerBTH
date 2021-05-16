@@ -1,9 +1,8 @@
-package ml.karmaconfigs.playerbth.Version;
+package ml.karmaconfigs.playerbth.version;
 
+import ml.karmaconfigs.api.bukkit.Console;
 import ml.karmaconfigs.playerbth.PlayerBTH;
-import ml.karmaconfigs.playerbth.Utils.Files.Files;
-import ml.karmaconfigs.playerbth.Utils.Server;
-import org.bukkit.scheduler.BukkitRunnable;
+import ml.karmaconfigs.playerbth.utils.files.Files;
 
 /**
  * Private GSA code
@@ -46,17 +45,17 @@ public class UpdaterFunction implements PlayerBTH {
      */
     public void checkVersion() {
         if (isOutdated()) {
-            Server.send("&7Birthday &f>> &cNew version available for PlayerBTH ( " + new GetLatestVersion().getVersionString() + " )");
+            Console.send("&7Birthday &f>> &cNew version available for PlayerBTH ( " + new GetLatestVersion().getVersionString() + " )");
             if (!Files.config.downloadToUpdate()) {
-                Server.send("&bDownload the latest version from &3https://www.spigotmc.org/resources/playerbirthday.73424/");
+                Console.send("&bDownload the latest version from &3https://www.spigotmc.org/resources/playerbirthday.73424/");
             } else {
                 try {
                     DownloadLatest latest = new DownloadLatest();
 
                     latest.download();
-                    Server.send("&aDownloaded latest version of PlayerBTH ( " + new GetLatestVersion().getVersionString() + " ) and will be installed on next server start");
+                    Console.send("&aDownloaded latest version of PlayerBTH ( " + new GetLatestVersion().getVersionString() + " ) and will be installed on next server start");
                 } catch (Throwable e) {
-                    Server.send("&bTried to download latest PlayerBTH but got an error, download the latest version from &3https://www.spigotmc.org/resources/playerbirthday.73424/");
+                    Console.send("&bTried to download latest PlayerBTH but got an error, download the latest version from &3https://www.spigotmc.org/resources/playerbirthday.73424/");
                 }
             }
             if (Files.config.sendChangeLogs()) {
@@ -64,7 +63,7 @@ public class UpdaterFunction implements PlayerBTH {
             }
         } else {
             if (Files.config.notifyUpdated()) {
-                Server.send("&7Birthday &f>> &aYou are using the latest version of PlayerBTH &7( &f" + new GetLatestVersion().getVersionString() + " &7)");
+                Console.send("&7Birthday &f>> &aYou are using the latest version of PlayerBTH &7( &f" + new GetLatestVersion().getVersionString() + " &7)");
             }
         }
     }

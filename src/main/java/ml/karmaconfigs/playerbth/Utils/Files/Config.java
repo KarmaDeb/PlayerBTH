@@ -1,10 +1,9 @@
-package ml.karmaconfigs.playerbth.Utils.Files;
+package ml.karmaconfigs.playerbth.utils.files;
 
-import ml.karmaconfigs.API.Spigot.KarmaYaml.FileCopy;
-import ml.karmaconfigs.API.Spigot.KarmaYaml.YamlReloader;
+import ml.karmaconfigs.api.bukkit.karmayaml.FileCopy;
+import ml.karmaconfigs.api.bukkit.karmayaml.YamlReloader;
 import ml.karmaconfigs.playerbth.PlayerBTH;
-import ml.karmaconfigs.playerbth.Utils.DataSys;
-import org.bukkit.configuration.InvalidConfigurationException;
+import ml.karmaconfigs.playerbth.utils.DataSys;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -37,9 +36,12 @@ public final class Config implements PlayerBTH {
                     config.loadFromString(reloader.getYamlString());
                     return true;
                 }
-            } catch (InvalidConfigurationException e) {
-                FileCopy copy = new FileCopy(plugin, "config.yml");
-                copy.copy(file);
+            } catch (Throwable ex) {
+                try {
+                    FileCopy copy = new FileCopy(plugin, "config.yml");
+                    copy.copy(file);
+                    return true;
+                } catch (Throwable ignored) {}
             }
             return false;
         }
@@ -58,8 +60,6 @@ public final class Config implements PlayerBTH {
     }
 
     public final boolean enableSong() {
-        System.out.println("Enable song: " + getBoolean("Song.enabled"));
-
         return getBoolean("Song.enabled");
     }
 
@@ -77,6 +77,10 @@ public final class Config implements PlayerBTH {
 
     public final int fireworkAmount() {
         return getInt("Firework.amount");
+    }
+
+    public final boolean giveCake() {
+        return getBoolean("Cake");
     }
 
     public final DataSys getDataSystem() {
@@ -101,6 +105,14 @@ public final class Config implements PlayerBTH {
 
     public final boolean downloadToUpdate() {
         return getBoolean("Update.UpdateFolder");
+    }
+
+    public final String birthdayNotSet() {
+        return getString("BdNotSet");
+    }
+
+    public final String birthdaySet() {
+        return getString("BdSet");
     }
 
     public final String mysqlHost() {

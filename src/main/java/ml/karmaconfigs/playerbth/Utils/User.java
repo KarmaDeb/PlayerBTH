@@ -1,4 +1,4 @@
-package ml.karmaconfigs.playerbth.Utils;
+package ml.karmaconfigs.playerbth.utils;
 
 import com.xxmicloxx.NoteBlockAPI.NoteBlockAPI;
 import com.xxmicloxx.NoteBlockAPI.model.RepeatMode;
@@ -6,14 +6,19 @@ import com.xxmicloxx.NoteBlockAPI.model.Song;
 import com.xxmicloxx.NoteBlockAPI.songplayer.RadioSongPlayer;
 import com.xxmicloxx.NoteBlockAPI.songplayer.SongPlayer;
 import com.xxmicloxx.NoteBlockAPI.utils.NBSDecoder;
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.bukkit.karmayaml.FileCopy;
+import ml.karmaconfigs.api.bukkit.karmayaml.YamlManager;
+import ml.karmaconfigs.api.bukkit.reflections.TitleMessage;
+import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.api.common.utils.FileUtilities;
+import ml.karmaconfigs.api.common.utils.StringUtils;
+import ml.karmaconfigs.playerbth.Main;
 import ml.karmaconfigs.playerbth.PlayerBTH;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Month;
-import ml.karmaconfigs.playerbth.Utils.Files.Files;
-import ml.karmaconfigs.playerbth.Utils.Files.YamlCreator;
-import ml.karmaconfigs.playerbth.Utils.Files.YamlManager;
-import ml.karmaconfigs.playerbth.Utils.MySQL.Utils;
-import org.bukkit.Bukkit;
+import ml.karmaconfigs.playerbth.utils.birthday.Birthday;
+import ml.karmaconfigs.playerbth.utils.birthday.Month;
+import ml.karmaconfigs.playerbth.utils.files.Files;
+import ml.karmaconfigs.playerbth.utils.mysql.Utils;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.OfflinePlayer;
@@ -26,7 +31,6 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -61,7 +65,7 @@ public final class User implements PlayerBTH, Files {
         this.player = player;
         if (config.getDataSystem().equals(DataSys.MYSQL)) {
             utils = new Utils(player);
-            if (!utils.userExists()) {
+            if (utils.notExists()) {
                 utils.createUser();
             }
         }
@@ -101,7 +105,8 @@ public final class User implements PlayerBTH, Files {
      */
     public final void sendTitle(String title, String subtitle) {
         if (player.getPlayer() != null && player.getPlayer().isOnline()) {
-            Title.sendTitle(player.getPlayer(), title, subtitle);
+            TitleMessage message = new TitleMessage(player.getPlayer(), title, subtitle);
+            message.send();
         }
     }
 
@@ -175,9 +180,30 @@ public final class User implements PlayerBTH, Files {
     public final void playSong(String name) {
         if (player.getPlayer() != null && player.getPlayer().isOnline()) {
             if (PlayerBTH.hasNoteBlock()) {
-                File songFile = new File(plugin.getDataFolder() + "/songs", name + ".nbs");
-                if (songFile.exists()) {
-                    Song song = NBSDecoder.parse(songFile);
+                if (!name.equals("Birthday")) {
+                    File songFile = new File(plugin.getDataFolder() + "/songs", name + ".nbs");
+                    if (songFile.exists()) {
+                        Song song = NBSDecoder.parse(songFile);
+                        if (song != null) {
+                            if (NoteBlockAPI.isReceivingSong(player.getPlayer())) {
+                                NoteBlockAPI.stopPlaying(player.getPlayer());
+                            }
+                            if (NoteBlockAPI.getSongPlayersByPlayer(player.getPlayer()) != null) {
+                                for (SongPlayer radio : NoteBlockAPI.getSongPlayersByPlayer(player.getPlayer())) {
+                                    radio.removePlayer(player.getPlayer());
+                                }
+                            }
+
+                            RadioSongPlayer radio = new RadioSongPlayer(song);
+
+                            radio.setRepeatMode(RepeatMode.NO);
+                            radio.addPlayer(player.getPlayer());
+                            radio.setPlaying(true);
+                        }
+                    }
+                } else {
+                    InputStream in_song = (Main.class).getResourceAsStream("/Birthday.nbs");
+                    Song song = NBSDecoder.parse(in_song);
                     if (song != null) {
                         if (NoteBlockAPI.isReceivingSong(player.getPlayer())) {
                             NoteBlockAPI.stopPlaying(player.getPlayer());
@@ -208,17 +234,22 @@ public final class User implements PlayerBTH, Files {
             celebrated.remove(player.getUniqueId());
         }
         if (!celebrated.contains(player.getUniqueId())) {
-            YamlCreator creator = new YamlCreator("commands.yml", true);
-            creator.createFile();
-            creator.setDefaults();
-            creator.saveFile();
-            YamlManager commands = new YamlManager("commands.yml");
+            try {
+                File commands_yml = new File(plugin.getDataFolder(), "commands.yml");
+                FileCopy creator = new FileCopy(plugin, "commands.yml");
+                creator.copy(commands_yml);
+            } catch (Throwable ex) {
+                logger.scheduleLog(Level.GRAVE, ex);
+                logger.scheduleLog(Level.INFO, "Failed to check file commands.yml");
+            }
+
+            YamlManager commands = new YamlManager(plugin, "commands");
 
             List<String> runByOthers = new ArrayList<>();
             List<String> runByPlayer = new ArrayList<>();
 
             for (String str : commands.getList("player")) {
-                if (!str.split(" ")[0].toLowerCase().equals("[player]")) {
+                if (!str.split(" ")[0].equalsIgnoreCase("[player]")) {
                     runByOthers.add("/" + str.replace("{player}", Objects.requireNonNull(player.getName())));
                 } else {
                     runByPlayer.add("/" + str.replace(str.split(" ")[0] + " ", "").replace("{player}", Objects.requireNonNull(player.getName())));
@@ -495,6 +526,18 @@ public final class User implements PlayerBTH, Files {
     }
 
     /**
+     * Check if the user has played in the server
+     * ( has <uuid>.player file )
+     *
+     * @return if the player has played in the server
+     */
+    public final boolean hasPlayedBefore() {
+        File player_file = new File(plugin.getDataFolder() + "/users", player.getUniqueId().toString() + ".player");
+
+        return player_file.exists();
+    }
+
+    /**
      * Removes player data
      */
     public final void dumpData() {
@@ -566,56 +609,6 @@ GNU LESSER GENERAL PUBLIC LICENSE
  the version number 2.1.]
  */
 
-class Title {
-    /**
-     * Gets a NMS class
-     *
-     * @param name the class name
-     * @return the NMS class
-     */
-    protected static Class<?> getNMSClass(String name) {
-        try {
-            return Class.forName("net.minecraft.server." + getVersion() + "." + name);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
-     * Gets the server version
-     *
-     * @return the version
-     */
-    protected static String getVersion() {
-        return Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-    }
-
-    /**
-     * Send a title to player
-     *
-     * @param Title the title
-     * @param Subtitle the title
-     */
-    static void sendTitle(Player player, String Title, String Subtitle) {
-        try {
-            Object titleString = Objects.requireNonNull(getNMSClass("IChatBaseComponent")).getDeclaredClasses()[0].getMethod("a", String.class).invoke(null, "{\"text\": \"" + StringUtils.toColor(Title) + "\"}");
-            Object SubtitleString = Objects.requireNonNull(getNMSClass("IChatBaseComponent")).getDeclaredClasses()[0].getMethod("a", String.class).invoke(null, "{\"text\": \"" + StringUtils.toColor(Subtitle) + "\"}");
-
-            Constructor<?> titleConstructor = Objects.requireNonNull(getNMSClass("PacketPlayOutTitle")).getConstructor(Objects.requireNonNull(getNMSClass("PacketPlayOutTitle")).getDeclaredClasses()[0], getNMSClass("IChatBaseComponent"), int.class, int.class, int.class);
-            Object title = titleConstructor.newInstance(Objects.requireNonNull(getNMSClass("PacketPlayOutTitle")).getDeclaredClasses()[0].getField("TITLE").get(null), titleString, 20 * 3, 20 * 5, 20 * 3);
-            Object subtitle = titleConstructor.newInstance(Objects.requireNonNull(getNMSClass("PacketPlayOutTitle")).getDeclaredClasses()[0].getField("SUBTITLE").get(null), SubtitleString, 20 * 3, 20 * 5, 20 * 3);
-            Object entityPlayer= player.getClass().getMethod("getHandle").invoke(player);
-            Object playerConnection = entityPlayer.getClass().getField("playerConnection").get(entityPlayer);
-
-            playerConnection.getClass().getMethod("sendPacket", getNMSClass("Packet")).invoke(playerConnection, title);
-            playerConnection.getClass().getMethod("sendPacket", getNMSClass("Packet")).invoke(playerConnection, subtitle);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-}
-
 /*
 GNU LESSER GENERAL PUBLIC LICENSE
                        Version 2.1, February 1999
@@ -641,28 +634,23 @@ final class PlayerFile implements PlayerBTH {
         File usersFolder = new File(plugin.getDataFolder() + "/users");
         if (!usersFolder.exists()) {
             if (usersFolder.mkdirs()) {
-                Server.send("Created users data folder", Server.AlertLevel.INFO);
+                Console.send(plugin, "Created users data folder", Level.INFO);
             }
         }
 
         file = new File(plugin.getDataFolder() + "/users", player.getUniqueId().toString() + ".player");
 
-        String path = file.getPath().replaceAll("\\\\", "/");
-
         try {
             if (!file.exists()) {
                 if (file.createNewFile()) {
-                    Server.send("Created player data file " + path, Server.AlertLevel.INFO);
+                    Console.send(plugin, "Created player data file {0}", Level.INFO, FileUtilities.getPrettyPath(file));
                 } else {
-                    Server.send("An unknown error occurred while creating file " + path, Server.AlertLevel.ERROR);
+                    Console.send(plugin, "An unknown error occurred while creating file {0}", Level.GRAVE, FileUtilities.getPrettyPath(file));
                 }
             }
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while creating file " + path, Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to initialize player file");
         }
     }
 
@@ -703,12 +691,9 @@ final class PlayerFile implements PlayerBTH {
             }
             writer.flush();
             writer.close();
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while writing to file " + path, Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "An error occurred while trying to write to file {0}", FileUtilities.getPrettyPath(this.file));
         } finally {
             try {
                 if (file != null) {
@@ -755,12 +740,9 @@ final class PlayerFile implements PlayerBTH {
                     }
                 }
             }
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while writing to file " + path, Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "An error occurred while trying to read file {0}", FileUtilities.getPrettyPath(this.file));
         } finally {
             try {
                 if (file != null) {
@@ -785,10 +767,8 @@ final class PlayerFile implements PlayerBTH {
     }
 
     public final void destroy() {
-        String path = file.getPath().replaceAll("\\\\", "/");
-
         if (file.delete()) {
-            Server.send("Removed user data file " + path, Server.AlertLevel.INFO);
+            Console.send(plugin, "Removed user data file {0}", Level.GRAVE, FileUtilities.getPrettyPath(file));
         }
     }
 }

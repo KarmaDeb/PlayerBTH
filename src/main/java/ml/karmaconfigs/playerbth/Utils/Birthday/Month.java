@@ -1,4 +1,4 @@
-package ml.karmaconfigs.playerbth.Utils.Birthday;
+package ml.karmaconfigs.playerbth.utils.birthday;
 
 import com.google.common.collect.Maps;
 

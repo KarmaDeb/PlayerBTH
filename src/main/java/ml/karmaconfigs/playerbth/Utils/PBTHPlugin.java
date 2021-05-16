@@ -1,17 +1,20 @@
-package ml.karmaconfigs.playerbth.Utils;
+package ml.karmaconfigs.playerbth.utils;
 
-import ml.karmaconfigs.API.Spigot.KarmaYaml.FileCopy;
-import ml.karmaconfigs.playerbth.Commands.StaffCommands;
-import ml.karmaconfigs.playerbth.Commands.UserCommands;
-import ml.karmaconfigs.playerbth.Events.PlayerJoinEvent;
-import ml.karmaconfigs.playerbth.Metrics.Metrics;
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.bukkit.karmayaml.FileCopy;
+import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.api.common.utils.FileUtilities;
+import ml.karmaconfigs.playerbth.commands.StaffCommands;
+import ml.karmaconfigs.playerbth.commands.UserCommands;
+import ml.karmaconfigs.playerbth.events.PlayerJoinEvent;
+import ml.karmaconfigs.playerbth.metrics.Metrics;
 import ml.karmaconfigs.playerbth.PlayerBTH;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Month;
-import ml.karmaconfigs.playerbth.Utils.Files.Files;
-import ml.karmaconfigs.playerbth.Utils.Files.YamlCreator;
-import ml.karmaconfigs.playerbth.Utils.MySQL.SQLPool;
-import ml.karmaconfigs.playerbth.Version.UpdaterFunction;
+import ml.karmaconfigs.playerbth.utils.birthday.Birthday;
+import ml.karmaconfigs.playerbth.utils.birthday.Month;
+import ml.karmaconfigs.playerbth.utils.birthday.PlayerBTHExpansion;
+import ml.karmaconfigs.playerbth.utils.files.Files;
+import ml.karmaconfigs.playerbth.utils.mysql.SQLPool;
+import ml.karmaconfigs.playerbth.version.UpdaterFunction;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -39,11 +42,11 @@ public class PBTHPlugin implements PlayerBTH, Files {
      * Initialize the plugin
      */
     public final void initialize() {
-        Server.send("&b-------------------");
-        Server.send(" ");
-        Server.send("&aInitializing {0} &aversion {1}", Server.name, Server.version);
-        Server.send(" ");
-        Server.send("&b-------------------");
+        Console.send("&b-------------------");
+        Console.send(" ");
+        Console.send("&aInitializing {0} &aversion {1}", name, version);
+        Console.send(" ");
+        Console.send("&b-------------------");
         initFiles();
 
         Objects.requireNonNull(plugin.getCommand("bth")).setExecutor(new UserCommands());
@@ -53,9 +56,16 @@ public class PBTHPlugin implements PlayerBTH, Files {
         onInitialize();
 
         if (!plugin.getServer().getPluginManager().isPluginEnabled("NoteBlockAPI")) {
-            Server.send("NoteBlockAPI not found, we recommend you to download it if you want to play songs", Server.AlertLevel.WARNING);
+            Console.send(plugin, "NoteBlockAPI not found, we recommend you to download it if you want to play songs", Level.WARNING);
         } else {
-            Server.send("NoteBlockAPI found, hooking it", Server.AlertLevel.INFO);
+            Console.send(plugin, "NoteBlockAPI found, hooking it", Level.OK);
+        }
+        if (!plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            Console.send(plugin, "PlaceholderAPI not found, we recommend you to use it as it may provide util information", Level.WARNING);
+        } else {
+            Console.send(plugin, "PlaceholderAPI found, hooking it", Level.OK);
+            PlayerBTHExpansion expansion = new PlayerBTHExpansion();
+            expansion.register();
         }
 
         startChecking();
@@ -66,11 +76,11 @@ public class PBTHPlugin implements PlayerBTH, Files {
      * Stop the plugin
      */
     public final void stop() {
-        Server.send("&b-------------------");
-        Server.send(" ");
-        Server.send("&cStopping {0}", Server.name, Server.version);
-        Server.send(" ");
-        Server.send("&b-------------------");
+        Console.send("&b-------------------");
+        Console.send(" ");
+        Console.send("&cStopping {0}", name, version);
+        Console.send(" ");
+        Console.send("&b-------------------");
         SQLPool.terminateMySQL();
         onStop();
     }
@@ -95,19 +105,25 @@ public class PBTHPlugin implements PlayerBTH, Files {
         File messages_yml = new File(plugin.getDataFolder(), "messages.yml");
 
         FileCopy config_copy = new FileCopy(plugin, "config.yml");
-        config_copy.setDirCreatedMessage("&7[ &bPlayerBTH &7] &7INFO: &bCreated directory {path}");
-        config_copy.setFileCreatedMessage("&7[ &bPlayerBTH &7] &7INFO: &bCreated file {path}");
         FileCopy messages_copy = new FileCopy(plugin, "messages.yml");
-        if (config_copy.copy(config_yml)) {
-            Server.send("Copied config.yml file and comments", Server.AlertLevel.INFO);
+
+        try {
+            config_copy.copy(config_yml);
+            messages_copy.copy(messages_yml);
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed while setting up files ( config.yml | messages.yml )");
+            Console.send(plugin, "An error occurred while setting up files, check plugin logs for more info", Level.GRAVE);
         }
-        if (messages_copy.copy(messages_yml)) {
-            Server.send("Copied messages.yml file and comments", Server.AlertLevel.INFO);
+
+        try {
+            File commands_yml = new File(plugin.getDataFolder(), "commands.yml");
+            FileCopy creator = new FileCopy(plugin, "commands.yml");
+            creator.copy(commands_yml);
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to check file commands.yml");
         }
-        YamlCreator creator = new YamlCreator("commands.yml", "commands.yml");
-        creator.createFile();
-        creator.setDefaults();
-        creator.saveFile();
 
         File oldSongsFolder = new File(plugin.getDataFolder() + "/Songs");
         File newSongsFolder = new File(plugin.getDataFolder() + "/songs");
@@ -115,7 +131,7 @@ public class PBTHPlugin implements PlayerBTH, Files {
             if (!newSongsFolder.exists()) {
                 if (newSongsFolder.mkdirs()) {
                     if (oldSongsFolder.renameTo(newSongsFolder)) {
-                        Server.send("Changed old songs folder (Songs) to new one (songs)", Server.AlertLevel.INFO);
+                        Console.send(plugin, "Changed old songs folder (Songs) to new one (songs)", Level.INFO);
                     }
                 }
             }
@@ -130,8 +146,6 @@ public class PBTHPlugin implements PlayerBTH, Files {
             for (File file : playersDat) {
                 if (getExtension(file).equals("yml")) {
                     try {
-                        String path = file.getPath().replaceAll("\\\\", "/");
-
                         FileConfiguration playerFile = YamlConfiguration.loadConfiguration(file);
                         UUID uuid = UUID.fromString(Objects.requireNonNull(playerFile.getString("UUID")));
                         OfflinePlayer player = plugin.getServer().getOfflinePlayer(uuid);
@@ -147,14 +161,15 @@ public class PBTHPlugin implements PlayerBTH, Files {
                         user.setNotifications(playerFile.getBoolean("Birthday.Public"));
 
                         if (file.delete()) {
-                            Server.send("Conversion of player file {0} to new player file complete", Server.AlertLevel.INFO, path);
+                            Console.send(plugin, "Conversion of player file {0} to new player file complete", Level.OK, FileUtilities.getPrettyPath(file));
                         } else {
-                            Server.send("Failed to delete old player file {0} and will be removed on exit", Server.AlertLevel.ERROR, path);
+                            Console.send(plugin, "Failed to delete old player file {0} and will be removed on exit", Level.WARNING, FileUtilities.getPrettyPath(file));
                             file.deleteOnExit();
                         }
                         conversion.put(file, true);
-                    } catch (Throwable e) {
-                        Server.log(e);
+                    } catch (Throwable ex) {
+                        logger.scheduleLog(Level.GRAVE, ex);
+                        logger.scheduleLog(Level.INFO, "Failed to converse old player file {0} to new player file", FileUtilities.getPrettyPath(file));
                         conversion.put(file, false);
                     }
                 }
@@ -162,7 +177,7 @@ public class PBTHPlugin implements PlayerBTH, Files {
             if (!conversion.isEmpty()) {
                 float elapsedTime = (System.nanoTime() - start) / 1000F;
                 if (oldPlayersDat.renameTo(newPlayersDat)) {
-                    Server.send("Old player data conversion finisihed with a total of {0} errors, {1} success and took {2} ms", Server.AlertLevel.INFO, getErrors(conversion), getSuccess(conversion), elapsedTime);
+                    Console.send("Old player data conversion finisihed with a total of {0} errors, {1} success and took {2} ms", Level.INFO, getErrors(conversion), getSuccess(conversion), elapsedTime);
                 }
             }
         }

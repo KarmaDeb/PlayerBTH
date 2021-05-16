@@ -1,4 +1,4 @@
-package ml.karmaconfigs.playerbth.Metrics;
+package ml.karmaconfigs.playerbth.metrics;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;

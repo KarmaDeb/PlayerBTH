@@ -1,15 +1,16 @@
-package ml.karmaconfigs.playerbth.Utils.Files;
+package ml.karmaconfigs.playerbth.utils.files;
 
-import ml.karmaconfigs.API.Spigot.KarmaYaml.FileCopy;
-import ml.karmaconfigs.API.Spigot.KarmaYaml.YamlReloader;
+import ml.karmaconfigs.api.bukkit.karmayaml.FileCopy;
+import ml.karmaconfigs.api.bukkit.karmayaml.YamlReloader;
+import ml.karmaconfigs.api.common.utils.StringUtils;
 import ml.karmaconfigs.playerbth.PlayerBTH;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Days;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Month;
+import ml.karmaconfigs.playerbth.utils.birthday.Birthday;
+import ml.karmaconfigs.playerbth.utils.birthday.Days;
+import ml.karmaconfigs.playerbth.utils.birthday.Month;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 
 import java.io.File;
@@ -41,9 +42,13 @@ public final class Messages implements PlayerBTH {
                     messages.loadFromString(reloader.getYamlString());
                     return true;
                 }
-            } catch (InvalidConfigurationException e) {
-                FileCopy copy = new FileCopy(plugin, "messages.yml");
-                copy.copy(file);
+            } catch (Throwable ex) {
+                try {
+                    FileCopy copy = new FileCopy(plugin, "messages.yml");
+                    copy.copy(file);
+
+                    return true;
+                } catch (Throwable ignored) {}
             }
             return false;
         }
@@ -208,6 +213,10 @@ public final class Messages implements PlayerBTH {
         return get("NotSet");
     }
 
+    public final String targetNotSet(final Player player) {
+        return get("TargetNotSet").replace("{player}", StringUtils.stripColor(player.getDisplayName()));
+    }
+
     public final String minAge() {
         return get("MinAge");
     }
@@ -313,7 +322,6 @@ public final class Messages implements PlayerBTH {
     }
 
     public final String birthdayTitle(OfflinePlayer player, int age) {
-        age = age + 1;
         HashMap<String, Object> replaces = new HashMap<>();
         replaces.put("{player}", player.getName());
 

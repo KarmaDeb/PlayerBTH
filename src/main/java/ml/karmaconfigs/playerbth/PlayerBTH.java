@@ -1,6 +1,7 @@
 package ml.karmaconfigs.playerbth;
 
-import ml.karmaconfigs.playerbth.Utils.StringUtils;
+import ml.karmaconfigs.api.bukkit.Logger;
+import ml.karmaconfigs.api.common.utils.StringUtils;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /*
@@ -21,8 +22,14 @@ public interface PlayerBTH {
     String name = StringUtils.toColor("&f[ &cGSA &f] &bPlayerBTH");
     String version = StringUtils.toColor("&c" + plugin.getDescription().getVersion());
 
+    Logger logger = new Logger(plugin);
+
     static boolean hasNoteBlock() {
         return plugin.getServer().getPluginManager().isPluginEnabled("NoteBlockAPI");
+    }
+
+    static boolean hasPlaceholderAPI() {
+        return plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
     }
 
     static String getJarName() {

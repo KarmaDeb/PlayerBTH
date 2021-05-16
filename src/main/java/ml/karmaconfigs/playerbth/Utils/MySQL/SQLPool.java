@@ -1,8 +1,10 @@
-package ml.karmaconfigs.playerbth.Utils.MySQL;
+package ml.karmaconfigs.playerbth.utils.mysql;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import ml.karmaconfigs.playerbth.Utils.Server;
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.playerbth.PlayerBTH;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -18,7 +20,7 @@ import java.sql.ResultSet;
  * terms of use determined
  * in <a href="https://karmaconfigs.ml/license/"> here </a>
  */
-public final class SQLPool {
+public final class SQLPool implements PlayerBTH {
 
     private static int max = 3, min = 10, timeout = 40, lifetime = 300;
     private static String host, database, table, username, password;
@@ -133,8 +135,8 @@ public final class SQLPool {
         config.setPassword(password);
         config.setMinimumIdle(min);
         config.setMaximumPoolSize(max);
-        config.setMaxLifetime(lifetime * 1000);
-        config.setConnectionTimeout(timeout * 1000);
+        config.setMaxLifetime(lifetime * 1000L);
+        config.setConnectionTimeout(timeout * 1000L);
         config.setConnectionTestQuery("SELECT 1");
 
         dataSource = new HikariDataSource(config);
@@ -153,12 +155,10 @@ public final class SQLPool {
 
             statement.executeUpdate();
             updateTables();
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while creating MySQL tables", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Error while preparing sql tables");
+            Console.send(plugin, "An error occurred while preparing tables for SQL", Level.GRAVE);
         } finally {
             close(connection, statement);
         }
@@ -210,18 +210,16 @@ public final class SQLPool {
                 statement.executeUpdate();
                 changes = true;
             }
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while updating MySQL tables", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Error while updating sql tables");
+            Console.send(plugin, "An error occurred while updating tables for SQL", Level.GRAVE);
         } finally {
             close(connection, statement);
         }
 
         if (changes) {
-            Server.send("MySQL tables updated", Server.AlertLevel.INFO);
+            Console.send(plugin, "MySQL tables updated", Level.INFO);
         }
     }
 
@@ -237,12 +235,10 @@ public final class SQLPool {
             DatabaseMetaData md = dataSource.getConnection().getMetaData();
             ResultSet rs = md.getColumns(null, null, table, column);
             return rs.next();
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while checking MySQL column " + column, Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Error while checking for sql column existence");
+            Console.send(plugin, "An error occurred while checking for sql column existence", Level.GRAVE);
             return false;
         }
     }

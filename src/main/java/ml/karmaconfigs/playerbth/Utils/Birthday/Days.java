@@ -1,4 +1,4 @@
-package ml.karmaconfigs.playerbth.Utils.Birthday;
+package ml.karmaconfigs.playerbth.utils.birthday;
 
 /**
  * Private GSA code

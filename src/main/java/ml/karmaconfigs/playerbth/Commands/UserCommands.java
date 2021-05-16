@@ -1,16 +1,18 @@
-package ml.karmaconfigs.playerbth.Commands;
+package ml.karmaconfigs.playerbth.commands;
 
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.common.Level;
 import ml.karmaconfigs.playerbth.PlayerBTH;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Days;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Month;
-import ml.karmaconfigs.playerbth.Utils.Files.Files;
-import ml.karmaconfigs.playerbth.Utils.Server;
-import ml.karmaconfigs.playerbth.Utils.User;
+import ml.karmaconfigs.playerbth.utils.birthday.Birthday;
+import ml.karmaconfigs.playerbth.utils.birthday.Days;
+import ml.karmaconfigs.playerbth.utils.birthday.Month;
+import ml.karmaconfigs.playerbth.utils.files.Files;
+import ml.karmaconfigs.playerbth.utils.User;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +32,7 @@ GNU LESSER GENERAL PUBLIC LICENSE
 public final class UserCommands implements CommandExecutor, PlayerBTH, Files {
 
     @Override
-    public final boolean onCommand(CommandSender sender, Command cmd, String arg, String[] args) {
+    public final boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String arg, String[] args) {
         if (sender instanceof Player) {
             Player player = (Player) sender;
             User user = new User(player);
@@ -39,7 +41,7 @@ public final class UserCommands implements CommandExecutor, PlayerBTH, Files {
                 sendInvalidArgsMessage(player);
             } else {
                 if (args[0] != null) {
-                    if (args[0].equals("help")) {
+                    if (args[0].equalsIgnoreCase("help")) {
                         if (args.length == 1) {
                             sendHelpMessage(player, "help");
                         } else {
@@ -49,7 +51,7 @@ public final class UserCommands implements CommandExecutor, PlayerBTH, Files {
                             }
                         }
                     } else {
-                        if (args[0].equals("setbd")) {
+                        if (args[0].equalsIgnoreCase("setbd")) {
                             if (!user.hasBirthday()) {
                                 if (args.length == 2) {
                                     try {
@@ -122,7 +124,7 @@ public final class UserCommands implements CommandExecutor, PlayerBTH, Files {
                                 user.send(messages.prefix() + messages.alreadySet(user.getBirthday()));
                             }
                         } else {
-                            if (args[0].equals("notify")) {
+                            if (args[0].equalsIgnoreCase("notify")) {
                                 if (args.length == 1) {
                                     if (user.hasNotifications()) {
                                         user.setNotifications(false);
@@ -144,7 +146,7 @@ public final class UserCommands implements CommandExecutor, PlayerBTH, Files {
                 }
             }
         } else {
-            Server.send("This command is for players only", Server.AlertLevel.ERROR);
+            Console.send(plugin, "This command is for players only", Level.INFO);
         }
         return false;
     }

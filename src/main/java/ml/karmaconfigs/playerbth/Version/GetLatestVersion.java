@@ -1,6 +1,8 @@
-package ml.karmaconfigs.playerbth.Version;
+package ml.karmaconfigs.playerbth.version;
 
-import ml.karmaconfigs.playerbth.Utils.Server;
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.playerbth.PlayerBTH;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 
@@ -19,7 +21,7 @@ import java.util.List;
  * terms of use determined
  * in <a href="https://karmaconfigs.ml/license/"> here </a>
  */
-public class GetLatestVersion {
+public class GetLatestVersion implements PlayerBTH {
 
     public static final String VERSION = "Latest version getter";
 
@@ -27,7 +29,7 @@ public class GetLatestVersion {
 
     private String version = "";
 
-    private List<String> replaced = new ArrayList<>();
+    private final List<String> replaced = new ArrayList<>();
 
 
     /**
@@ -56,7 +58,9 @@ public class GetLatestVersion {
             this.latest = Integer.parseInt(replaced.get(0).replaceAll("[aA-zZ]", "").replace(".", ""));
             this.version = replaced.get(0);
         } catch (Throwable ex) {
-            Server.send("Couldn't make a connection with update system", Server.AlertLevel.WARNING);
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to perform a connection with the update system");
+            Console.send(plugin, "Couldn't make a connection with update system", Level.GRAVE);
         }
     }
 

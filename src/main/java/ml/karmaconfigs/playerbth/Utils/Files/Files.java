@@ -1,6 +1,9 @@
-package ml.karmaconfigs.playerbth.Utils.Files;
+package ml.karmaconfigs.playerbth.utils.files;
 
-import ml.karmaconfigs.playerbth.Utils.Server;
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.api.common.utils.FileUtilities;
+import ml.karmaconfigs.playerbth.PlayerBTH;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
@@ -18,17 +21,17 @@ GNU LESSER GENERAL PUBLIC LICENSE
  the version number 2.1.]
  */
 
-@Deprecated
-public interface Files {
+public interface Files extends PlayerBTH {
 
     Messages messages = new Messages();
     Config config = new Config();
 
+    @Deprecated
     static void copyValues(File copyFrom, File copyTo, Object... ignore) {
         if (copyFrom.exists()) {
             try {
                 if (!copyTo.exists() && copyTo.createNewFile()) {
-                    Server.send("Created file {0}", Server.AlertLevel.INFO, copyTo.getAbsolutePath().replace("\\\\", "/"));
+                    Console.send(plugin, "Created file {0}", Level.INFO, FileUtilities.getPrettyPath(copyTo));
                 }
                 YamlConfiguration from = YamlConfiguration.loadConfiguration(copyFrom);
                 YamlConfiguration to = YamlConfiguration.loadConfiguration(copyTo);

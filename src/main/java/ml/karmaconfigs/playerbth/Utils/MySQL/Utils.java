@@ -1,9 +1,10 @@
-package ml.karmaconfigs.playerbth.Utils.MySQL;
+package ml.karmaconfigs.playerbth.utils.mysql;
 
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.common.Level;
 import ml.karmaconfigs.playerbth.PlayerBTH;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Month;
-import ml.karmaconfigs.playerbth.Utils.Server;
+import ml.karmaconfigs.playerbth.utils.birthday.Birthday;
+import ml.karmaconfigs.playerbth.utils.birthday.Month;
 import org.bukkit.OfflinePlayer;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -47,7 +48,7 @@ public final class Utils implements PlayerBTH {
      *
      * @return a boolean
      */
-    public final boolean userExists() {
+    public final boolean notExists() {
         Connection connection = null;
         PreparedStatement statement = null;
         try {
@@ -56,14 +57,12 @@ public final class Utils implements PlayerBTH {
             statement.setString(1, uuid);
 
             ResultSet results = statement.executeQuery();
-            return results.next();
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while checking MySQL user", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
-            return false;
+            return !results.next();
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to check for user existence of {0}", uuid);
+            Console.send(plugin, "Failed to check existence of user {0}", Level.GRAVE, uuid);
+            return true;
         } finally {
             SQLPool.close(connection, statement);
         }
@@ -83,7 +82,7 @@ public final class Utils implements PlayerBTH {
 
             ResultSet results = statement.executeQuery();
             results.next();
-            if (!userExists()) {
+            if (notExists()) {
                 PreparedStatement add = connection.prepareStatement("INSERT INTO " + table + "(UUID,BIRTHDAY,AGE,NOTIFY,CELEBRATE) VALUE (?,?,?,?,?)");
 
                 add.setString(1, uuid);
@@ -93,12 +92,10 @@ public final class Utils implements PlayerBTH {
                 add.setString(5, "");
                 add.executeUpdate();
             }
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while creating MySQL user", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to create tables for user {0}", uuid);
+            Console.send(plugin, "An error occurred while creating tables for user {0}", Level.GRAVE, uuid);
         } finally {
             SQLPool.close(connection, statement);
         }
@@ -126,11 +123,9 @@ public final class Utils implements PlayerBTH {
 
                 statement.executeUpdate();
             } catch (Throwable ex) {
-                Server.send("An internal error occurred while removing MySQL user", Server.AlertLevel.ERROR);
-                Server.send("&c" + ex.fillInStackTrace());
-                for (StackTraceElement stack : ex.getStackTrace()) {
-                    Server.send("&b                       " + stack);
-                }
+                logger.scheduleLog(Level.GRAVE, ex);
+                logger.scheduleLog(Level.INFO, "Failed to remove tables of user {0}", uuid);
+                Console.send(plugin, "An error occurred while removing tables from user {0}", Level.GRAVE, uuid);
             }
         } finally {
             SQLPool.close(connection, statement);
@@ -154,12 +149,10 @@ public final class Utils implements PlayerBTH {
 
             statement.executeUpdate();
             setAge(birthday.getAge());
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while setting MySQL user birthday", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to set birthday of user {0}", uuid);
+            Console.send(plugin, "An error occurred while setting birthday of user {0}", Level.GRAVE, uuid);
         } finally {
             SQLPool.close(connection, statement);
         }
@@ -181,12 +174,10 @@ public final class Utils implements PlayerBTH {
             statement.setInt(1, age);
 
             statement.executeUpdate();
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while setting MySQL user birthday", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to set age of user {0}", uuid);
+            Console.send(plugin, "An error occurred while setting age of user {0}", Level.GRAVE, uuid);
         } finally {
             SQLPool.close(connection, statement);
         }
@@ -209,12 +200,10 @@ public final class Utils implements PlayerBTH {
             statement.setBoolean(1, val);
 
             statement.executeUpdate();
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while setting MySQL user notifications", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to set notification status of user {0}", uuid);
+            Console.send(plugin, "An error occurred while setting notifications for user {0}", Level.GRAVE, uuid);
         } finally {
             SQLPool.close(connection, statement);
         }
@@ -231,12 +220,10 @@ public final class Utils implements PlayerBTH {
             statement.setString(1, dateFormat);
 
             statement.executeUpdate();
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while setting MySQL user celebration date", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to set birthday celebration of user {0}", uuid);
+            Console.send(plugin, "An error occurred while setting birthday celebration of user {0}", Level.GRAVE, uuid);
         } finally {
             SQLPool.close(connection, statement);
         }
@@ -258,12 +245,10 @@ public final class Utils implements PlayerBTH {
             ResultSet results = statement.executeQuery();
             results.next();
             return !results.getString("BIRTHDAY").isEmpty() && !results.getString("BIRTHDAY").equals("00-00");
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while checking MySQL user birthday", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed while getting birthday of user {0}", uuid);
+            Console.send(plugin, "An error occurred while getting birthday of user {0}", Level.GRAVE, uuid);
             return false;
         } finally {
             SQLPool.close(connection, statement);
@@ -298,12 +283,10 @@ public final class Utils implements PlayerBTH {
             ResultSet results = statement.executeQuery();
             results.next();
             return Integer.parseInt(results.getString("BIRTHDAY").split("-")[1]);
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while getting MySQL user birthday month", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed while set getting birthday of user {0}", uuid);
+            Console.send(plugin, "An error occurred while getting birthday of user {0}", Level.GRAVE, uuid);
             return 1;
         } finally {
             SQLPool.close(connection, statement);
@@ -326,12 +309,10 @@ public final class Utils implements PlayerBTH {
             ResultSet results = statement.executeQuery();
             results.next();
             return Integer.parseInt(results.getString("BIRTHDAY").split("-")[0]);
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while getting MySQL user birthday day", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed while getting birthday day of user {0}", uuid);
+            Console.send(plugin, "An error occurred while getting birthday day of user {0}", Level.GRAVE, uuid);
             return 1;
         } finally {
             SQLPool.close(connection, statement);
@@ -354,12 +335,10 @@ public final class Utils implements PlayerBTH {
             ResultSet results = statement.executeQuery();
             results.next();
             return Integer.parseInt(results.getString("AGE"));
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while getting MySQL user age", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed while getting age of user {0}", uuid);
+            Console.send(plugin, "An error occurred while getting age of user {0}", Level.GRAVE, uuid);
             return 1;
         } finally {
             SQLPool.close(connection, statement);
@@ -383,12 +362,10 @@ public final class Utils implements PlayerBTH {
             ResultSet results = statement.executeQuery();
             results.next();
             return Integer.parseInt(results.getString("NOTIFY")) == 1;
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while getting MySQL user notifications", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed while notifications of user {0}", uuid);
+            Console.send(plugin, "An error occurred while checking notifications of user {0}", Level.GRAVE, uuid);
             return true;
         } finally {
             SQLPool.close(connection, statement);
@@ -429,12 +406,10 @@ public final class Utils implements PlayerBTH {
                     return false;
                 }
             }
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while getting MySQL user celebrate date", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed while getting birthday celebration of user {0}", uuid);
+            Console.send(plugin, "An error occurred while getting birthday celebration of user {0}", Level.GRAVE, uuid);
         } finally {
             SQLPool.close(connection, statement);
         }
@@ -462,12 +437,10 @@ public final class Utils implements PlayerBTH {
             while (results.next()) {
                 players.add(plugin.getServer().getOfflinePlayer(UUID.fromString(results.getString("UUID"))));
             }
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while getting MySQL users", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed while getting birthday players");
+            Console.send(plugin, "An error occurred while getting all birthday players", Level.GRAVE);
         } finally {
             SQLPool.close(connection, statement);
         }

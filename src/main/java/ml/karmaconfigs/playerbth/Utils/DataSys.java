@@ -1,4 +1,4 @@
-package ml.karmaconfigs.playerbth.Utils;
+package ml.karmaconfigs.playerbth.utils;
 
 /*
 GNU LESSER GENERAL PUBLIC LICENSE

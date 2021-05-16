@@ -1,6 +1,6 @@
-package ml.karmaconfigs.playerbth.Utils.MySQL;
+package ml.karmaconfigs.playerbth.utils.mysql;
 
-import ml.karmaconfigs.playerbth.Utils.User;
+import ml.karmaconfigs.playerbth.utils.User;
 import org.bukkit.OfflinePlayer;
 
 /*

@@ -2,7 +2,7 @@ name: PlayerBTH
 version: ${project.version}
 main: ml.karmaconfigs.playerbth.Main
 prefix: PlayerBTH
-softdepend: [NoteBlockAPI]
+softdepend: [NoteBlockAPI, PlaceholderAPI]
 authors: [KarmaDev, KarmaConfigs]
 description: A simple birthday plugin for your users, with custom commands
 commands:

@@ -1,17 +1,18 @@
-package ml.karmaconfigs.playerbth.Commands;
+package ml.karmaconfigs.playerbth.commands;
 
-import ml.karmaconfigs.playerbth.API.BirthdayCelebrateEvent;
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.playerbth.api.BirthdayCelebrateEvent;
 import ml.karmaconfigs.playerbth.PlayerBTH;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Month;
-import ml.karmaconfigs.playerbth.Utils.DataSys;
-import ml.karmaconfigs.playerbth.Utils.Files.Config;
-import ml.karmaconfigs.playerbth.Utils.Files.Files;
-import ml.karmaconfigs.playerbth.Utils.Files.Messages;
-import ml.karmaconfigs.playerbth.Utils.MySQL.Migration;
-import ml.karmaconfigs.playerbth.Utils.MySQL.SQLPool;
-import ml.karmaconfigs.playerbth.Utils.Server;
-import ml.karmaconfigs.playerbth.Utils.User;
+import ml.karmaconfigs.playerbth.utils.birthday.Birthday;
+import ml.karmaconfigs.playerbth.utils.birthday.Month;
+import ml.karmaconfigs.playerbth.utils.DataSys;
+import ml.karmaconfigs.playerbth.utils.files.Config;
+import ml.karmaconfigs.playerbth.utils.files.Files;
+import ml.karmaconfigs.playerbth.utils.files.Messages;
+import ml.karmaconfigs.playerbth.utils.mysql.Migration;
+import ml.karmaconfigs.playerbth.utils.mysql.SQLPool;
+import ml.karmaconfigs.playerbth.utils.User;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -19,6 +20,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -48,7 +50,7 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
     private final Permission reload = new Permission("playerbirthday.reload", PermissionDefault.FALSE);
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String arg, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String arg, String[] args) {
         if (sender instanceof Player) {
             Player player = (Player) sender;
             User user = new User(player);
@@ -74,7 +76,6 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                         if (args[0].equals("dump")) {
                             if (player.hasPermission(dump)) {
                                 if (args.length == 2) {
-
                                     UUID uuid;
                                     if (PropertyReader.getProperty("online-mode").toString().equals("true")) {
                                         uuid = PropertyReader.getUUID(args[1]);
@@ -82,10 +83,10 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                         uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + args[1]).getBytes(StandardCharsets.UTF_8));
                                     }
 
-                                    if (plugin.getServer().getOfflinePlayer(uuid).hasPlayedBefore()) {
-                                        OfflinePlayer target = plugin.getServer().getOfflinePlayer(uuid);
-                                        User targetUser = new User(target);
+                                    OfflinePlayer target = plugin.getServer().getOfflinePlayer(uuid);
+                                    User targetUser = new User(target);
 
+                                    if (targetUser.hasPlayedBefore()) {
                                         targetUser.dumpData();
                                         user.send(messages.prefix() + messages.removed(target));
                                     } else {
@@ -183,8 +184,7 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
 
                                                         plugin.getServer().getPluginManager().callEvent(event);
 
-                                                        event.setCancelled(false);
-                                                        if (!event.isCancelled()) {
+                                                        if (targetUser.hasBirthday()) {
                                                             Birthday birthday = targetUser.getBirthday();
 
                                                             birthday.setAge(birthday.getAge() + 1);
@@ -213,6 +213,8 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                                             }
 
                                                             targetUser.setCelebrated(true);
+                                                        } else {
+                                                            user.send(messages.prefix() + messages.notSet());
                                                         }
                                                     } else {
                                                         user.send(messages.prefix() + "&cTarget not found");
@@ -277,14 +279,14 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                     uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + args[1]).getBytes(StandardCharsets.UTF_8));
                                 }
 
-                                if (plugin.getServer().getOfflinePlayer(uuid).hasPlayedBefore()) {
-                                    OfflinePlayer target = plugin.getServer().getOfflinePlayer(uuid);
-                                    User targetUser = new User(target);
+                                OfflinePlayer target = plugin.getServer().getOfflinePlayer(uuid);
+                                User targetUser = new User(target);
 
+                                if (targetUser.hasPlayedBefore()) {
                                     targetUser.dumpData();
-                                    Server.send(messages.prefix() + messages.removed(target));
+                                    Console.send(messages.prefix() + messages.removed(target));
                                 } else {
-                                    Server.send(messages.prefix() + messages.unknownPlayer(args[1]));
+                                    Console.send(messages.prefix() + messages.unknownPlayer(args[1]));
                                 }
                             } else {
                                 sendHelpMessage("dump");
@@ -304,18 +306,18 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                         OfflinePlayer target = plugin.getServer().getOfflinePlayer(uuid);
                                         User targetUser = new User(target);
 
-                                        Server.send("&b&m--------------------");
-                                        Server.send(" ");
-                                        Server.send("&7Player: &f" + target.getName());
+                                        Console.send("&b&m--------------------");
+                                        Console.send(" ");
+                                        Console.send("&7Player: &f" + target.getName());
                                         if (targetUser.hasBirthday()) {
                                             Month month = Month.byID(targetUser.getBirthday().getMonth());
-                                            Server.send("&7Birthday: &f" + targetUser.getBirthday().getDay() + "&8&l/&f" + month.name().substring(0, 1).toUpperCase() + month.name().substring(1).toLowerCase());
-                                            Server.send("&7Age: &f" + targetUser.getBirthday().getAge());
+                                            Console.send("&7Birthday: &f" + targetUser.getBirthday().getDay() + "&8&l/&f" + month.name().substring(0, 1).toUpperCase() + month.name().substring(1).toLowerCase());
+                                            Console.send("&7Age: &f" + targetUser.getBirthday().getAge());
                                         } else {
-                                            Server.send("&7Birthday: &cNot set");
+                                            Console.send("&7Birthday: &cNot set");
                                         }
                                     } else {
-                                        Server.send(messages.prefix() + messages.unknownPlayer(args[1]));
+                                        Console.send(messages.prefix() + messages.unknownPlayer(args[1]));
                                     }
                                 } else {
                                     sendHelpMessage("info");
@@ -327,7 +329,7 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                             Migration migration = new Migration();
                                             migration.migrateFromSQLToYaml();
 
-                                            Server.send(messages.prefix() + "&aMigrating from MySQL to Yaml");
+                                            Console.send(messages.prefix() + "&aMigrating from MySQL to Yaml");
                                         } else {
                                             try {
                                                 SQLPool pool = new SQLPool(config.mysqlHost(), config.mysqlDatabase(), config.mysqlTable(), config.mysqlUser(), config.mysqlPassword(), config.mysqlPort(), config.useSSL());
@@ -338,9 +340,9 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                                 Migration migration = new Migration();
                                                 migration.migrateFromSQLToYaml();
 
-                                                Server.send(messages.prefix() + "&aMigrating from MySQL to Yaml");
+                                                Console.send(messages.prefix() + "&aMigrating from MySQL to Yaml");
                                             } catch (Throwable e) {
-                                                Server.send(messages.prefix() + "&cTried to migrate without MySQL data established in config");
+                                                Console.send(messages.prefix() + "&cTried to migrate without MySQL data established in config");
                                             }
                                         }
                                     } else {
@@ -363,42 +365,44 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                                     User targetUser = new User(target);
 
                                                     BirthdayCelebrateEvent event = new BirthdayCelebrateEvent(target.getPlayer());
-
                                                     plugin.getServer().getPluginManager().callEvent(event);
 
-                                                    Birthday birthday = targetUser.getBirthday();
+                                                    if (targetUser.hasBirthday()) {
+                                                        Birthday birthday = targetUser.getBirthday();
+                                                        for (Player online : plugin.getServer().getOnlinePlayers()) {
+                                                            User targets = new User(online);
 
-                                                    birthday.setAge(birthday.getAge() + 1);
-                                                    targetUser.setBirthday(birthday);
-
-                                                    for (Player online : plugin.getServer().getOnlinePlayers()) {
-                                                        User targets = new User(online);
-
-                                                        if (online != target.getPlayer()) {
-                                                            if (targets.hasNotifications()) {
-                                                                targets.sendTitle(messages.birthdayTitle(target, targetUser.getBirthday().getAge()), messages.birthdaySubtitle(target, targetUser.getBirthday().getAge()));
+                                                            if (online != target.getPlayer()) {
+                                                                if (targets.hasNotifications()) {
+                                                                    targets.sendTitle(messages.birthdayTitle(target, targetUser.getBirthday().getAge()), messages.birthdaySubtitle(target, targetUser.getBirthday().getAge()));
+                                                                    if (config.enableSong()) {
+                                                                        targets.playSong(config.getSong());
+                                                                    }
+                                                                }
+                                                            } else {
+                                                                targetUser.sendTitle(messages.birthdayTitle(target, targetUser.getBirthday().getAge()), messages.birthdaySubtitle(target, targetUser.getBirthday().getAge()));
                                                                 if (config.enableSong()) {
-                                                                    targets.playSong(config.getSong());
+                                                                    targetUser.playSong(config.getSong());
                                                                 }
                                                             }
-                                                        } else {
-                                                            targetUser.sendTitle(messages.birthdayTitle(target, targetUser.getBirthday().getAge()), messages.birthdaySubtitle(target, targetUser.getBirthday().getAge()));
-                                                            if (config.enableSong()) {
-                                                                targetUser.playSong(config.getSong());
-                                                            }
                                                         }
-                                                    }
 
-                                                    if (config.enableFireWorks()) {
-                                                        targetUser.spawnFireworks(config.fireworkAmount());
-                                                    }
+                                                        birthday.setAge(birthday.getAge() + 1);
+                                                        targetUser.setBirthday(birthday);
 
-                                                    targetUser.setCelebrated(true);
+                                                        if (config.enableFireWorks()) {
+                                                            targetUser.spawnFireworks(config.fireworkAmount());
+                                                        }
+
+                                                        targetUser.setCelebrated(true);
+                                                    } else {
+                                                        Console.send(messages.prefix() + messages.targetNotSet(target.getPlayer()));
+                                                    }
                                                 } else {
-                                                    Server.send(messages.prefix() + "&cTarget not found");
+                                                    Console.send(messages.prefix() + "&cTarget not found");
                                                 }
                                             } else {
-                                                Server.send(messages.prefix() + messages.unknownPlayer(args[1]));
+                                                Console.send(messages.prefix() + messages.unknownPlayer(args[1]));
                                             }
                                         } else {
                                             sendHelpMessage("celebrate");
@@ -406,14 +410,14 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                     } else {
                                         if (args[0].equals("reload")) {
                                             if (Config.manager.reload()) {
-                                                Server.send("Reloaded config.yml", Server.AlertLevel.INFO);
+                                                Console.send(plugin, "Reloaded config.yml", Level.OK);
                                             } else {
-                                                Server.send("Couldn't reload config.yml", Server.AlertLevel.ERROR);
+                                                Console.send(plugin, "Couldn't reload config.yml", Level.GRAVE);
                                             }
                                             if (Messages.manager.reload()) {
-                                                Server.send("Reloaded messages.yml", Server.AlertLevel.INFO);
+                                                Console.send(plugin, "Reloaded messages.yml", Level.OK);
                                             } else {
-                                                Server.send("Couldn't reload messages.yml", Server.AlertLevel.ERROR);
+                                                Console.send(plugin, "Couldn't reload messages.yml", Level.GRAVE);
                                             }
                                         } else {
                                             sendInvalidArgsMessage();
@@ -430,12 +434,12 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
     }
 
     private void sendInvalidArgsMessage() {
-        Server.send("&0&m---------------");
-        Server.send(" ");
-        Server.send("{0} &aversion {1}", name, version);
-        Server.send("&7Type &f/bths help &7 for help");
-        Server.send(" ");
-        Server.send("&0&m---------------");
+        Console.send("&0&m---------------");
+        Console.send(" ");
+        Console.send("{0} &aversion {1}", name, version);
+        Console.send("&7Type &f/bths help &7 for help");
+        Console.send(" ");
+        Console.send("&0&m---------------");
     }
 
     private void sendInvalidArgsMessage(Player player) {
@@ -444,17 +448,13 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
         user.send("&0&m---------------");
         user.send(" ");
         user.send("{0} &aversion {1}", name, version);
-        if (player.hasPermission(help)) {
-            user.send("&7Type &f/bths help&7 for help");
-        } else {
-            user.send("&7Type &f/bths help&7 for help");
-        }
+        user.send("&7Type &f/bths help&7 for help");
         user.send(" ");
         user.send("&0&m---------------");
     }
 
     private void sendHelpMessage(String sub) {
-        switch (sub) {
+        switch (sub.toLowerCase()) {
             case "help":
                 List<String> help = new ArrayList<>();
                 help.add("&3&m--------------------");
@@ -466,22 +466,22 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                 help.add("&7/bths migrate &f- &7Migrates data from MySQL");
                 help.add(" ");
                 help.add("&3&m--------------------");
-                Server.send(help.toString()
+                Console.send(help.toString()
                         .replace("[", "")
                         .replace("]", "")
                         .replace(",", "&r\n&r"));
                 break;
             case "dump":
-                Server.send(messages.prefix() +"&7/bths dump <player> &f- &7Removes player birthday data, including age and notification configuration");
+                Console.send(messages.prefix() +"&7/bths dump <player> &f- &7Removes player birthday data, including age and notification configuration");
                 break;
             case "info":
-                Server.send(messages.prefix() +"&7/bths info <player> &f- &7Shows player birthday info, age, and notification configuration");
+                Console.send(messages.prefix() +"&7/bths info <player> &f- &7Shows player birthday info, age, and notification configuration");
                 break;
             case "migrate":
-                Server.send(messages.prefix() +"&7/bths migrate &f- &7Migrates all players data from MySQL to Yaml");
+                Console.send(messages.prefix() +"&7/bths migrate &f- &7Migrates all players data from MySQL to Yaml");
                 break;
             case "celebrate":
-                Server.send(messages.prefix() +"&7/bths celebrate <player> &f- &7Forces the plugin to celebrate the specified player birthday");
+                Console.send(messages.prefix() +"&7/bths celebrate <player> &f- &7Forces the plugin to celebrate the specified player birthday");
                 break;
             default:
                 sendInvalidArgsMessage();
@@ -490,7 +490,7 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
 
     private void sendHelpMessage(Player player, String sub) {
         User user = new User(player);
-        switch (sub) {
+        switch (sub.toLowerCase()) {
             case "help":
                 List<String> help = new ArrayList<>();
                 help.add("&3&m--------------------");

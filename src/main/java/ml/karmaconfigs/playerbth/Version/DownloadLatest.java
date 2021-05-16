@@ -1,7 +1,8 @@
-package ml.karmaconfigs.playerbth.Version;
+package ml.karmaconfigs.playerbth.version;
 
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.common.Level;
 import ml.karmaconfigs.playerbth.PlayerBTH;
-import ml.karmaconfigs.playerbth.Utils.Server;
 
 import java.io.*;
 import java.net.URL;
@@ -43,9 +44,9 @@ public final class DownloadLatest implements PlayerBTH {
 
             if (!update.exists()) {
                 if (update.mkdir()) {
-                    Server.send("Created update folder for PlayerBTH new update", Server.AlertLevel.INFO);
+                    Console.send(plugin, "Created update folder for PlayerBTH new update", Level.INFO);
                 } else {
-                    Server.send("An unknown error occurred while creating update folder", Server.AlertLevel.ERROR);
+                    Console.send(plugin, "An unknown error occurred while creating update folder", Level.GRAVE);
                 }
             }
 
@@ -62,12 +63,9 @@ public final class DownloadLatest implements PlayerBTH {
 
             output.close();
             input.close();
-        } catch (Throwable e) {
-            Server.send("An internal error occurred while downloading latest PlayerBTH version", Server.AlertLevel.ERROR);
-            Server.send("&c" + e.fillInStackTrace());
-            for (StackTraceElement stack : e.getStackTrace()) {
-                Server.send("&b                       " + stack);
-            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to download latest PlayerBTH release");
         }
     }
 }

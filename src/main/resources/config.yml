@@ -44,6 +44,12 @@ Update:
   #Download the .jar into /update folder
   UpdateFolder: true
 
+#Birthday not set placeholder
+BdNotSet: "&bBirthday not set!"
+
+#Birthday set placeholder
+BdSet: "&bYou have a birthday!"
+
 #MySQL options
 MySQL:
   #MySQL host

@@ -1,11 +1,13 @@
-package ml.karmaconfigs.playerbth.Events;
+package ml.karmaconfigs.playerbth.events;
 
-import ml.karmaconfigs.playerbth.API.BirthdayCelebrateEvent;
+import ml.karmaconfigs.playerbth.api.BirthdayCelebrateEvent;
 import ml.karmaconfigs.playerbth.PlayerBTH;
-import ml.karmaconfigs.playerbth.Utils.Birthday.Birthday;
-import ml.karmaconfigs.playerbth.Utils.Files.Files;
-import ml.karmaconfigs.playerbth.Utils.MySQL.Migration;
-import ml.karmaconfigs.playerbth.Utils.User;
+import ml.karmaconfigs.playerbth.utils.birthday.Birthday;
+import ml.karmaconfigs.playerbth.utils.files.Files;
+import ml.karmaconfigs.playerbth.utils.mysql.Migration;
+import ml.karmaconfigs.playerbth.utils.User;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -14,6 +16,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 
 /*
 GNU LESSER GENERAL PUBLIC LICENSE
@@ -29,67 +32,82 @@ GNU LESSER GENERAL PUBLIC LICENSE
 
 public class PlayerJoinEvent implements Listener, PlayerBTH, Files {
 
+    private final static HashSet<Player> waiting_celebration = new HashSet<>();
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerJoin(org.bukkit.event.player.PlayerJoinEvent e) {
         Player player = e.getPlayer();
         User user = new User(player);
 
-        new Migration().migrateFromYamlToMysql(player);
+        Migration migration = new Migration();
+        migration.migrateFromYamlToMysql(player);
 
         if (user.hasBirthday()) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (player.isOnline()) {
-                        Birthday birthday = user.getBirthday();
+            if (!waiting_celebration.contains(player)) {
+                waiting_celebration.add(player);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (player.isOnline()) {
+                            Birthday birthday = user.getBirthday();
 
-                        Date now = new Date();
-                        SimpleDateFormat today = new SimpleDateFormat("dd-MM");
+                            Date now = new Date();
+                            SimpleDateFormat today = new SimpleDateFormat("dd-MM");
 
-                        int day = Integer.parseInt(today.format(now).split("-")[0]);
-                        int month = Integer.parseInt(today.format(now).split("-")[1]);
+                            int day = Integer.parseInt(today.format(now).split("-")[0]);
+                            int month = Integer.parseInt(today.format(now).split("-")[1]);
 
-                        if (day == birthday.getDay() && month == birthday.getMonth()) {
-                            if (!user.isCelebrated()) {
-                                BirthdayCelebrateEvent event = new BirthdayCelebrateEvent(player);
+                            if (day == birthday.getDay() && month == birthday.getMonth()) {
+                                if (!user.isCelebrated()) {
+                                    BirthdayCelebrateEvent event = new BirthdayCelebrateEvent(player);
 
-                                plugin.getServer().getPluginManager().callEvent(event);
+                                    plugin.getServer().getPluginManager().callEvent(event);
 
-                                if (!event.isCancelled()) {
-                                    birthday.setAge(birthday.getAge() + 1);
-                                    user.setBirthday(birthday);
+                                    if (!event.isCancelled()) {
+                                        Player player = e.getPlayer();
 
-                                    Player player = e.getPlayer();
+                                        for (Player online : plugin.getServer().getOnlinePlayers()) {
+                                            User user = new User(online);
 
-                                    for (Player online : plugin.getServer().getOnlinePlayers()) {
-                                        User user = new User(online);
-
-                                        if (online != player) {
-                                            if (user.hasNotifications()) {
+                                            if (online != player) {
+                                                if (user.hasNotifications()) {
+                                                    user.sendTitle(messages.birthdayTitle(player, user.getBirthday().getAge()), messages.birthdaySubtitle(player, user.getBirthday().getAge()));
+                                                    user.playSong(config.getSong());
+                                                }
+                                            } else {
                                                 user.sendTitle(messages.birthdayTitle(player, user.getBirthday().getAge()), messages.birthdaySubtitle(player, user.getBirthday().getAge()));
                                                 user.playSong(config.getSong());
                                             }
-                                        } else {
-                                            user.sendTitle(messages.birthdayTitle(player, user.getBirthday().getAge()), messages.birthdaySubtitle(player, user.getBirthday().getAge()));
+                                        }
+
+                                        birthday.setAge(birthday.getAge() + 1);
+                                        user.setBirthday(birthday);
+
+                                        if (config.enableFireWorks()) {
+                                            user.spawnFireworks(config.fireworkAmount());
+                                        }
+
+                                        if (config.enableSong()) {
                                             user.playSong(config.getSong());
                                         }
-                                    }
 
-                                    if (config.enableFireWorks()) {
-                                        user.spawnFireworks(config.fireworkAmount());
-                                    }
+                                        if (config.giveCake()) {
+                                            Location location = player.getLocation();
+                                            Material type = location.getBlock().getType();
+                                            location.getBlock().setType(Material.CAKE);
 
-                                    if (config.enableSong()) {
-                                        user.playSong(config.getSong());
-                                    }
+                                            plugin.getServer().getScheduler().runTaskLater(plugin, () -> location.getBlock().setType(type), 20 * 5);
+                                        }
 
-                                    user.setCelebrated(false);
+                                        user.setCelebrated(false);
+                                    }
                                 }
                             }
                         }
+                        waiting_celebration.remove(player);
                     }
-                }
-            }.runTaskLater(plugin, 20 * 30);
+                }.runTaskLater(plugin, 20 * 30);
+            }
         }
     }
 }
