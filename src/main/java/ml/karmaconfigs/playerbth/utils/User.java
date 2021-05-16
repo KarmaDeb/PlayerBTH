@@ -1,0 +1,774 @@
+package ml.karmaconfigs.playerbth.utils;
+
+import com.xxmicloxx.NoteBlockAPI.NoteBlockAPI;
+import com.xxmicloxx.NoteBlockAPI.model.RepeatMode;
+import com.xxmicloxx.NoteBlockAPI.model.Song;
+import com.xxmicloxx.NoteBlockAPI.songplayer.RadioSongPlayer;
+import com.xxmicloxx.NoteBlockAPI.songplayer.SongPlayer;
+import com.xxmicloxx.NoteBlockAPI.utils.NBSDecoder;
+import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.bukkit.karmayaml.FileCopy;
+import ml.karmaconfigs.api.bukkit.karmayaml.YamlManager;
+import ml.karmaconfigs.api.bukkit.reflections.TitleMessage;
+import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.api.common.utils.FileUtilities;
+import ml.karmaconfigs.api.common.utils.StringUtils;
+import ml.karmaconfigs.playerbth.Main;
+import ml.karmaconfigs.playerbth.PlayerBTH;
+import ml.karmaconfigs.playerbth.utils.birthday.Birthday;
+import ml.karmaconfigs.playerbth.utils.birthday.Month;
+import ml.karmaconfigs.playerbth.utils.files.Files;
+import ml.karmaconfigs.playerbth.utils.mysql.Utils;
+import org.bukkit.Color;
+import org.bukkit.FireworkEffect;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Firework;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
+
+public final class User implements PlayerBTH, Files {
+
+    private final static ArrayList<UUID> celebrated = new ArrayList<>();
+
+    private final DataSys sys = config.getDataSystem();
+
+    private final OfflinePlayer player;
+    private Utils utils;
+
+    /**
+     * Initialize the user class
+     * with the specified player
+     *
+     * @param player the player
+     */
+    public User(OfflinePlayer player) {
+        this.player = player;
+        if (config.getDataSystem().equals(DataSys.MYSQL)) {
+            utils = new Utils(player);
+            if (utils.notExists()) {
+                utils.createUser();
+            }
+        }
+    }
+
+    /**
+     * Send a message to the player
+     *
+     * @param message the message
+     */
+    public final void send(String message) {
+        if (player.getPlayer() != null && player.getPlayer().isOnline()) {
+            player.getPlayer().sendMessage(StringUtils.toColor(message));
+        }
+    }
+
+    /**
+     * Send a message to the player
+     * with replaces in it
+     *
+     * @param message the message
+     * @param replaces the replaces
+     */
+    public final void send(String message, Object... replaces) {
+        for (int i = 0; i < replaces.length; i++) {
+            message = message.replace("{" + i + "}", replaces[i].toString());
+        }
+
+        send(message);
+    }
+
+    /**
+     * Send a title to the player
+     *
+     * @param title the title
+     * @param subtitle the subtitle
+     */
+    public final void sendTitle(String title, String subtitle) {
+        if (player.getPlayer() != null && player.getPlayer().isOnline()) {
+            TitleMessage message = new TitleMessage(player.getPlayer(), title, subtitle);
+            message.send();
+        }
+    }
+
+    /**
+     * Set if the player wants to listen
+     * to other players birthdays
+     *
+     * @param value true/false
+     */
+    public final void setNotifications(boolean value) {
+        switch (sys) {
+            case FILE:
+                PlayerFile file = new PlayerFile(player);
+                file.write("BDNotify", value);
+                break;
+            case MYSQL:
+                utils.setNotifications(value);
+                break;
+        }
+    }
+
+    /**
+     * Save the player birthday
+     *
+     * @param birthday the birthday
+     */
+    public final void setBirthday(Birthday birthday) {
+        switch (sys) {
+            case FILE:
+                PlayerFile file = new PlayerFile(player);
+                file.write("BDMonth", birthday.getMonth());
+                file.write("BDDay", birthday.getDay());
+                file.write("BDAge", birthday.getAge());
+                break;
+            case MYSQL:
+                utils.setBirthday(birthday);
+                break;
+        }
+    }
+
+    /**
+     * Set if the player wants to listen
+     * to other players birthdays
+     *
+     * @param value true/false
+     */
+    public final void setNotificationsFile(boolean value) {
+        PlayerFile file = new PlayerFile(player);
+
+        file.write("BDNotify", value);
+    }
+
+    /**
+     * Save the player birthday
+     *
+     * @param birthday the birthday
+     */
+    public final void setBirthdayFile(Birthday birthday) {
+        PlayerFile file = new PlayerFile(player);
+
+        file.write("BDMonth", birthday.getMonth());
+        file.write("BDDay", birthday.getDay());
+        file.write("BDAge", birthday.getAge());
+    }
+
+    /**
+     * Play a song to the player
+     *
+     * @param name the song name
+     */
+    public final void playSong(String name) {
+        if (player.getPlayer() != null && player.getPlayer().isOnline()) {
+            if (PlayerBTH.hasNoteBlock()) {
+                if (!name.equals("Birthday")) {
+                    File songFile = new File(plugin.getDataFolder() + "/songs", name + ".nbs");
+                    if (songFile.exists()) {
+                        Song song = NBSDecoder.parse(songFile);
+                        if (song != null) {
+                            if (NoteBlockAPI.isReceivingSong(player.getPlayer())) {
+                                NoteBlockAPI.stopPlaying(player.getPlayer());
+                            }
+                            if (NoteBlockAPI.getSongPlayersByPlayer(player.getPlayer()) != null) {
+                                for (SongPlayer radio : NoteBlockAPI.getSongPlayersByPlayer(player.getPlayer())) {
+                                    radio.removePlayer(player.getPlayer());
+                                }
+                            }
+
+                            RadioSongPlayer radio = new RadioSongPlayer(song);
+
+                            radio.setRepeatMode(RepeatMode.NO);
+                            radio.addPlayer(player.getPlayer());
+                            radio.setPlaying(true);
+                        }
+                    }
+                } else {
+                    InputStream in_song = (Main.class).getResourceAsStream("/Birthday.nbs");
+                    Song song = NBSDecoder.parse(in_song);
+                    if (song != null) {
+                        if (NoteBlockAPI.isReceivingSong(player.getPlayer())) {
+                            NoteBlockAPI.stopPlaying(player.getPlayer());
+                        }
+                        if (NoteBlockAPI.getSongPlayersByPlayer(player.getPlayer()) != null) {
+                            for (SongPlayer radio : NoteBlockAPI.getSongPlayersByPlayer(player.getPlayer())) {
+                                radio.removePlayer(player.getPlayer());
+                            }
+                        }
+
+                        RadioSongPlayer radio = new RadioSongPlayer(song);
+
+                        radio.setRepeatMode(RepeatMode.NO);
+                        radio.addPlayer(player.getPlayer());
+                        radio.setPlaying(true);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Set the player birthday as
+     * celebrated
+     */
+    public final void setCelebrated(boolean force) {
+        if (force) {
+            celebrated.remove(player.getUniqueId());
+        }
+        if (!celebrated.contains(player.getUniqueId())) {
+            try {
+                File commands_yml = new File(plugin.getDataFolder(), "commands.yml");
+                FileCopy creator = new FileCopy(plugin, "commands.yml");
+                creator.copy(commands_yml);
+            } catch (Throwable ex) {
+                logger.scheduleLog(Level.GRAVE, ex);
+                logger.scheduleLog(Level.INFO, "Failed to check file commands.yml");
+            }
+
+            YamlManager commands = new YamlManager(plugin, "commands");
+
+            List<String> runByOthers = new ArrayList<>();
+            List<String> runByPlayer = new ArrayList<>();
+
+            for (String str : commands.getList("player")) {
+                if (!str.split(" ")[0].equalsIgnoreCase("[player]")) {
+                    runByOthers.add("/" + str.replace("{player}", Objects.requireNonNull(player.getName())));
+                } else {
+                    runByPlayer.add("/" + str.replace(str.split(" ")[0] + " ", "").replace("{player}", Objects.requireNonNull(player.getName())));
+                }
+            }
+            for (Player online : plugin.getServer().getOnlinePlayers()) {
+                new User(online).executeCommands(runByOthers);
+            }
+            executeCommands(runByPlayer);
+            for (String str : commands.getList("console")) {
+                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), str.replace("{player}", Objects.requireNonNull(player.getName())));
+            }
+            for (String str : commands.getList("messages")) {
+                send(str.replace("{player}", Objects.requireNonNull(player.getName())));
+            }
+
+            celebrated.add(player.getUniqueId());
+
+            String format = DateTime.now().getYear() + "/" + DateTime.now().getMonthOfYear() + "/" + DateTime.now().getDayOfMonth() + " " + DateTime.now().getHourOfDay() + ":" + DateTime.now().getMinuteOfHour() + ":" + DateTime.now().getSecondOfMinute();
+
+            switch (sys) {
+                case FILE:
+                    PlayerFile pf = new PlayerFile(player);
+                    pf.write("Celebrated", format);
+                    break;
+                case MYSQL:
+                    utils.setCelebrate(format);
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Execute the specified commands
+     *
+     * @param commands the commands
+     */
+    private void executeCommands(List<String> commands) {
+        if (player.getPlayer() != null) {
+            for (String str : commands) {
+                player.getPlayer().performCommand(str);
+            }
+        }
+    }
+
+    /**
+     * Spawn fireworks at player location
+     *
+     * @param amount The amount of fireworks
+     */
+    public final void spawnFireworks(int amount) {
+        if (player.getPlayer() != null) {
+            if (amount == 0) amount = 1;
+            int finalAmount = amount;
+            new BukkitRunnable() {
+                int back = finalAmount;
+                @Override
+                public void run() {
+                    if (back == 0) {
+                        cancel();
+                    } else {
+                        Firework firework = Objects.requireNonNull(player.getPlayer().getLocation().getWorld()).spawn(player.getPlayer().getLocation(), Firework.class);
+                        FireworkMeta fwMeta = firework.getFireworkMeta();
+
+                        fwMeta.addEffect(FireworkEffect.builder().withColor(randomColor()).withTrail().withFlicker().withFade(randomColor()).with(randomEffect()).build());
+                        fwMeta.setPower(Files.config.fireworkPower());
+
+                        firework.setFireworkMeta(fwMeta);
+                        back--;
+                    }
+                }
+            }.runTaskTimer(plugin, 0, 20);
+        }
+    }
+
+    /**
+     * Get a random firework effect
+     *
+     * @return a firework effect
+     */
+    private FireworkEffect.Type randomEffect() {
+        HashMap<Integer, FireworkEffect.Type> types = new HashMap<>();
+        for (int i = 0; i < FireworkEffect.Type.values().length; i++) {
+            types.put(i, FireworkEffect.Type.values()[i]);
+        }
+        int random = new Random().nextInt(types.size());
+        return types.get(random);
+    }
+
+    /**
+     * Get a random firework effect
+     *
+     * @return a firework effect
+     */
+    private Color[] randomColor() {
+        HashMap<Integer, Color> types = new HashMap<>();
+        types.put(0, Color.YELLOW);
+        types.put(2, Color.WHITE);
+        types.put(3, Color.TEAL);
+        types.put(4, Color.SILVER);
+        types.put(5, Color.PURPLE);
+        types.put(6, Color.ORANGE);
+        types.put(7, Color.OLIVE);
+        types.put(8, Color.NAVY);
+        types.put(9, Color.MAROON);
+        types.put(10, Color.LIME);
+        types.put(11, Color.GREEN);
+        types.put(12, Color.GRAY);
+        types.put(13, Color.FUCHSIA);
+        types.put(14, Color.BLUE);
+        types.put(15, Color.BLACK);
+        types.put(16, Color.AQUA);
+        types.put(17, Color.RED);
+
+        Color[] colors = new Color[3];
+        for (int i = 0; i < 3; i++) {
+            int random = new Random().nextInt(17);
+            if (types.get(random) != null) {
+                colors[i] = types.get(random);
+            } else {
+                i--;
+            }
+        }
+
+        return colors;
+    }
+
+    /**
+     * Check if the player has a
+     * birthday set
+     *
+     * @return a boolean
+     */
+    @SuppressWarnings("all")
+    public final boolean hasBirthday() {
+        boolean has = false;
+        switch (sys) {
+            case FILE:
+                PlayerFile file = new PlayerFile(player);
+                Object month = file.getVale("BDMonth", null);
+                Object day = file.getVale("BDDay", null);
+                Object age = file.getVale("BDAge", null);
+                if (month != null && day != null && age != null) {
+                    has = true;
+                } else {
+                    try {
+                        int Month = Integer.parseInt(month.toString());
+                        int Day = Integer.parseInt(day.toString());
+                        int Age = Integer.parseInt(age.toString());
+
+                        has = true;
+                    } catch (Throwable e) {
+                        has = false;
+                    }
+                }
+                break;
+            case MYSQL:
+                has = utils.hasBirthday();
+                break;
+        }
+
+        return has;
+    }
+
+    /**
+     * Check if the player wants to listen
+     * other players birthdays
+     *
+     * @return a boolean
+     */
+    public final boolean hasNotifications() {
+        boolean has = false;
+        switch (sys) {
+            case FILE:
+                PlayerFile file = new PlayerFile(player);
+                try {
+                    has = Boolean.parseBoolean(file.getVale("BDNotify", true).toString());
+                } catch (Throwable e) {
+                    file.write("BDNotify", true);
+                    has = true;
+                }
+                break;
+            case MYSQL:
+                has = utils.hasNotifications();
+                break;
+        }
+        return has;
+    }
+
+    /**
+     * Check if the player has a
+     * birthday set
+     *
+     * @return a boolean
+     */
+    @SuppressWarnings("all")
+    public final boolean hasBirthdayFile() {
+        PlayerFile file = new PlayerFile(player);
+
+        Object month = file.getVale("BDMonth", null);
+        Object day = file.getVale("BDDay", null);
+        Object age = file.getVale("BDAge", null);
+
+        if (month != null && day != null && age != null) {
+            return true;
+        } else {
+            try {
+                int Month = Integer.parseInt(month.toString());
+                int Day = Integer.parseInt(day.toString());
+                int Age = Integer.parseInt(age.toString());
+
+                return true;
+            } catch (Throwable e) {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Check if the player wants to listen
+     * other players birthdays
+     *
+     * @return a boolean
+     */
+    public final boolean hasNotificationsFile() {
+        PlayerFile file = new PlayerFile(player);
+
+        try {
+            return Boolean.parseBoolean(file.getVale("BDNotify", true).toString());
+        } catch (Throwable e) {
+            file.write("BDNotify", true);
+             return true;
+        }
+    }
+
+    /**
+     * Check if the player has celebrated
+     * his birthday
+     *
+     * @return a boolean
+     */
+    public final boolean isCelebrated() {
+        if (celebrated.contains(player.getUniqueId())) {
+            return true;
+        } else {
+            switch (sys) {
+                case FILE:
+                    PlayerFile pf = new PlayerFile(player);
+
+                    String data = pf.getVale("Celebrated", "").toString();
+                    if (!data.isEmpty()) {
+                        DateTimeFormatter now = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm:ss");
+                        DateTime time = now.parseDateTime(data);
+
+                        if (time.plusDays(1).isBeforeNow()) {
+                            if (time.getDayOfMonth() + 1 == DateTime.now().getDayOfMonth()) {
+                                String format = DateTime.now().year().get() + "/" + DateTime.now().monthOfYear().get() + "/" + DateTime.now().dayOfMonth().get() + " " + time.getHourOfDay() + ":" + time.getMinuteOfHour() + ":" + time.getSecondOfMinute();
+                                time = now.parseDateTime(format);
+
+                                return time.plusHours(24).isBeforeNow();
+                            } else {
+                                return true;
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                    return false;
+                case MYSQL:
+                    return utils.isCelebrated();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if the user has played in the server
+     * ( has <uuid>.player file )
+     *
+     * @return if the player has played in the server
+     */
+    public final boolean hasPlayedBefore() {
+        File player_file = new File(plugin.getDataFolder() + "/users", player.getUniqueId().toString() + ".player");
+
+        return player_file.exists();
+    }
+
+    /**
+     * Removes player data
+     */
+    public final void dumpData() {
+        switch (sys) {
+            case FILE:
+                PlayerFile file = new PlayerFile(player);
+                file.destroy();
+                break;
+            case MYSQL:
+                utils.removeUser();
+                break;
+        }
+    }
+
+    /**
+     * Get the user birthday
+     *
+     * @return a birthday
+     */
+    public final Birthday getBirthday() {
+        Birthday birthday;
+        switch (sys) {
+            case FILE:
+                PlayerFile file = new PlayerFile(player);
+                int month = Integer.parseInt(file.getVale("BDMonth", null).toString());
+                int day = Integer.parseInt(file.getVale("BDDay", null).toString());
+                int age = Integer.parseInt(file.getVale("BDAge", null).toString());
+                birthday = new Birthday(Month.byID(month), day);
+                birthday.setAge(age);
+                break;
+            case MYSQL:
+                birthday = utils.getBirthday();
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + sys);
+        }
+
+        return birthday;
+    }
+
+    /**
+     * Get the user birthday
+     *
+     * @return a birthday
+     */
+    public final Birthday getFileBirthday() {
+        PlayerFile file = new PlayerFile(player);
+
+        int month = Integer.parseInt(file.getVale("BDMonth", null).toString());
+        int day = Integer.parseInt(file.getVale("BDDay", null).toString());
+        int age = Integer.parseInt(file.getVale("BDAge", null).toString());
+
+        Birthday birthday = new Birthday(Month.byID(month), day);
+        birthday.setAge(age);
+
+        return birthday;
+    }
+}
+
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
+
+/*
+GNU LESSER GENERAL PUBLIC LICENSE
+                       Version 2.1, February 1999
+ Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+ 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+[This is the first released version of the Lesser GPL.  It also counts
+ as the successor of the GNU Library Public License, version 2, hence
+ the version number 2.1.]
+ */
+
+final class PlayerFile implements PlayerBTH {
+
+    private final File file;
+
+    /**
+     * Initialize the player file class
+     *
+     * @param player the player
+     */
+    protected PlayerFile(OfflinePlayer player) {
+        File usersFolder = new File(plugin.getDataFolder() + "/users");
+        if (!usersFolder.exists()) {
+            if (usersFolder.mkdirs()) {
+                Console.send(plugin, "Created users data folder", Level.INFO);
+            }
+        }
+
+        file = new File(plugin.getDataFolder() + "/users", player.getUniqueId().toString() + ".player");
+
+        try {
+            if (!file.exists()) {
+                if (file.createNewFile()) {
+                    Console.send(plugin, "Created player data file {0}", Level.INFO, FileUtilities.getPrettyPath(file));
+                } else {
+                    Console.send(plugin, "An unknown error occurred while creating file {0}", Level.GRAVE, FileUtilities.getPrettyPath(file));
+                }
+            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "Failed to initialize player file");
+        }
+    }
+
+    public final void write(String path, Object value) {
+        InputStream file = null;
+        InputStreamReader fileReader = null;
+        BufferedReader reader = null;
+
+        try {
+            file = new FileInputStream(this.file);
+            fileReader = new InputStreamReader(file, StandardCharsets.UTF_8);
+            reader = new BufferedReader(fileReader);
+
+            List<String> sets = new ArrayList<>();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                if(line.contains(":")) {
+                    if (line.split(":")[0] != null && !line.split(":")[0].isEmpty()) {
+                        String linePath = line.split(":")[0];
+
+                        if (linePath.equals(path)) {
+                            sets.add(linePath + ": " + value);
+                        } else {
+                            sets.add(line);
+                        }
+                    }
+                }
+            }
+
+            if (!sets.contains(path + ": " + value)) {
+                sets.add(path + ": "+ value);
+            }
+
+            FileWriter writer = new FileWriter(this.file);
+            for (String str : sets) {
+                writer.write(str + "\n");
+            }
+            writer.flush();
+            writer.close();
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "An error occurred while trying to write to file {0}", FileUtilities.getPrettyPath(this.file));
+        } finally {
+            try {
+                if (file != null) {
+                    file.close();
+                }
+                if (fileReader != null) {
+                    fileReader.close();
+                }
+                if (reader != null) {
+                    if (reader.lines() != null) {
+                        reader.lines().sorted().distinct().close();
+                        reader.lines().distinct().close();
+                        reader.lines().sorted().close();
+                        reader.lines().close();
+                        reader.close();
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    public final Object getVale(String path, Object deffault) {
+        Object value = deffault;
+
+        InputStream file = null;
+        InputStreamReader fileReader = null;
+        BufferedReader reader = null;
+
+        try {
+            file = new FileInputStream(this.file);
+            fileReader = new InputStreamReader(file, StandardCharsets.UTF_8);
+            reader = new BufferedReader(fileReader);
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                if(line.contains(":")) {
+                    if (line.split(":")[0] != null && !line.split(":")[0].isEmpty()) {
+                        String linePath = line.split(":")[0];
+
+                        if (linePath.equals(path)) {
+                            value = line.replace(linePath + ": ", "");
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ex) {
+            logger.scheduleLog(Level.GRAVE, ex);
+            logger.scheduleLog(Level.INFO, "An error occurred while trying to read file {0}", FileUtilities.getPrettyPath(this.file));
+        } finally {
+            try {
+                if (file != null) {
+                    file.close();
+                }
+                if (fileReader != null) {
+                    fileReader.close();
+                }
+                if (reader != null) {
+                    if (reader.lines() != null) {
+                        reader.lines().sorted().distinct().close();
+                        reader.lines().distinct().close();
+                        reader.lines().sorted().close();
+                        reader.lines().close();
+                        reader.close();
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        return value;
+    }
+
+    public final void destroy() {
+        if (file.delete()) {
+            Console.send(plugin, "Removed user data file {0}", Level.GRAVE, FileUtilities.getPrettyPath(file));
+        }
+    }
+}
