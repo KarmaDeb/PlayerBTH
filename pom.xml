@@ -6,7 +6,7 @@
 
     <groupId>ml.karmaconfigs</groupId>
     <artifactId>PlayerBTH</artifactId>
-    <version>2.2.4</version>
+    <version>2.2.5</version>
     <packaging>jar</packaging>
 
     <name>PlayerBTH</name>
@@ -132,7 +132,7 @@
         <dependency>
             <groupId>ml.karmaconfigs</groupId>
             <artifactId>KarmaAPI-Bukkit</artifactId>
-            <version>1.2.1</version>
+            <version>1.2.6</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

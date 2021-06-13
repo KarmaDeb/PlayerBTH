@@ -1,11 +1,9 @@
 package ml.karmaconfigs.playerbth.utils.files;
 
-import ml.karmaconfigs.api.bukkit.karmayaml.FileCopy;
-import ml.karmaconfigs.api.bukkit.karmayaml.YamlReloader;
+import ml.karmaconfigs.api.common.karmafile.karmayaml.KarmaYamlManager;
+import ml.karmaconfigs.api.common.karmafile.karmayaml.YamlReloader;
 import ml.karmaconfigs.playerbth.PlayerBTH;
 import ml.karmaconfigs.playerbth.utils.DataSys;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -25,25 +23,18 @@ GNU LESSER GENERAL PUBLIC LICENSE
 public final class Config implements PlayerBTH {
 
     private final static File file = new File(plugin.getDataFolder(), "config.yml");
-    private final static FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+    private final static KarmaYamlManager config = new KarmaYamlManager(file);
 
     public interface manager {
 
         static boolean reload() {
-            try {
-                YamlReloader reloader = new YamlReloader(plugin, file, "config.yml");
-                if (reloader.reloadAndCopy()) {
-                    config.loadFromString(reloader.getYamlString());
-                    return true;
-                }
-            } catch (Throwable ex) {
-                try {
-                    FileCopy copy = new FileCopy(plugin, "config.yml");
-                    copy.copy(file);
-                    return true;
-                } catch (Throwable ignored) {}
+            YamlReloader reloader = config.getReloader();
+            if (reloader != null) {
+                reloader.reload();
+                return true;
+            } else {
+                return false;
             }
-            return false;
         }
     }
 

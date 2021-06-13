@@ -1,8 +1,7 @@
 package ml.karmaconfigs.playerbth.commands;
 
-import ml.karmaconfigs.api.bukkit.Console;
-import ml.karmaconfigs.api.common.Level;
-import ml.karmaconfigs.playerbth.api.BirthdayCelebrateEvent;
+import ml.karmaconfigs.api.common.Console;
+import ml.karmaconfigs.api.common.utils.enums.Level;
 import ml.karmaconfigs.playerbth.PlayerBTH;
 import ml.karmaconfigs.playerbth.utils.birthday.Birthday;
 import ml.karmaconfigs.playerbth.utils.birthday.Month;
@@ -179,10 +178,6 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                                     OfflinePlayer target = plugin.getServer().getOfflinePlayer(uuid);
                                                     if (target.getPlayer() != null) {
                                                         User targetUser = new User(target);
-
-                                                        BirthdayCelebrateEvent event = new BirthdayCelebrateEvent(target.getPlayer());
-
-                                                        plugin.getServer().getPluginManager().callEvent(event);
 
                                                         if (targetUser.hasBirthday()) {
                                                             Birthday birthday = targetUser.getBirthday();
@@ -363,9 +358,6 @@ public class StaffCommands implements CommandExecutor, PlayerBTH, Files {
                                                 OfflinePlayer target = plugin.getServer().getOfflinePlayer(uuid);
                                                 if (target.getPlayer() != null) {
                                                     User targetUser = new User(target);
-
-                                                    BirthdayCelebrateEvent event = new BirthdayCelebrateEvent(target.getPlayer());
-                                                    plugin.getServer().getPluginManager().callEvent(event);
 
                                                     if (targetUser.hasBirthday()) {
                                                         Birthday birthday = targetUser.getBirthday();

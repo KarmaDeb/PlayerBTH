@@ -1,8 +1,8 @@
 package ml.karmaconfigs.playerbth.utils;
 
-import ml.karmaconfigs.api.bukkit.Console;
-import ml.karmaconfigs.api.bukkit.karmayaml.FileCopy;
-import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.api.common.Console;
+import ml.karmaconfigs.api.common.karmafile.karmayaml.FileCopy;
+import ml.karmaconfigs.api.common.utils.enums.Level;
 import ml.karmaconfigs.api.common.utils.FileUtilities;
 import ml.karmaconfigs.playerbth.commands.StaffCommands;
 import ml.karmaconfigs.playerbth.commands.UserCommands;

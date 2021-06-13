@@ -6,11 +6,11 @@ import com.xxmicloxx.NoteBlockAPI.model.Song;
 import com.xxmicloxx.NoteBlockAPI.songplayer.RadioSongPlayer;
 import com.xxmicloxx.NoteBlockAPI.songplayer.SongPlayer;
 import com.xxmicloxx.NoteBlockAPI.utils.NBSDecoder;
-import ml.karmaconfigs.api.bukkit.Console;
-import ml.karmaconfigs.api.bukkit.karmayaml.FileCopy;
-import ml.karmaconfigs.api.bukkit.karmayaml.YamlManager;
+import ml.karmaconfigs.api.common.Console;
 import ml.karmaconfigs.api.bukkit.reflections.TitleMessage;
-import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.api.common.karmafile.karmayaml.FileCopy;
+import ml.karmaconfigs.api.common.karmafile.karmayaml.KarmaYamlManager;
+import ml.karmaconfigs.api.common.utils.enums.Level;
 import ml.karmaconfigs.api.common.utils.FileUtilities;
 import ml.karmaconfigs.api.common.utils.StringUtils;
 import ml.karmaconfigs.playerbth.Main;
@@ -243,12 +243,12 @@ public final class User implements PlayerBTH, Files {
                 logger.scheduleLog(Level.INFO, "Failed to check file commands.yml");
             }
 
-            YamlManager commands = new YamlManager(plugin, "commands");
+            KarmaYamlManager commands = new KarmaYamlManager(plugin, "commands");
 
             List<String> runByOthers = new ArrayList<>();
             List<String> runByPlayer = new ArrayList<>();
 
-            for (String str : commands.getList("player")) {
+            for (String str : commands.getStringList("player")) {
                 if (!str.split(" ")[0].equalsIgnoreCase("[player]")) {
                     runByOthers.add("/" + str.replace("{player}", Objects.requireNonNull(player.getName())));
                 } else {
@@ -259,10 +259,10 @@ public final class User implements PlayerBTH, Files {
                 new User(online).executeCommands(runByOthers);
             }
             executeCommands(runByPlayer);
-            for (String str : commands.getList("console")) {
+            for (String str : commands.getStringList("console")) {
                 plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), str.replace("{player}", Objects.requireNonNull(player.getName())));
             }
-            for (String str : commands.getList("messages")) {
+            for (String str : commands.getStringList("messages")) {
                 send(str.replace("{player}", Objects.requireNonNull(player.getName())));
             }
 

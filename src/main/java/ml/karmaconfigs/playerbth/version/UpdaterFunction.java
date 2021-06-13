@@ -1,6 +1,6 @@
 package ml.karmaconfigs.playerbth.version;
 
-import ml.karmaconfigs.api.bukkit.Console;
+import ml.karmaconfigs.api.common.Console;
 import ml.karmaconfigs.playerbth.PlayerBTH;
 import ml.karmaconfigs.playerbth.utils.files.Files;
 

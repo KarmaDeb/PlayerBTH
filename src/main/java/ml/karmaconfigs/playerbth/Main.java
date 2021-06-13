@@ -1,9 +1,10 @@
 package ml.karmaconfigs.playerbth;
 
-import ml.karmaconfigs.api.bukkit.Console;
-import ml.karmaconfigs.api.common.JarInjector;
-import ml.karmaconfigs.api.common.Level;
-import ml.karmaconfigs.playerbth.utils.PBTHPlugin;
+import ml.karmaconfigs.api.common.ResourceDownloader;
+import ml.karmaconfigs.api.common.karma.KarmaPlugin;
+import ml.karmaconfigs.api.common.karma.KarmaSource;
+import ml.karmaconfigs.api.common.karma.loader.KarmaBootstrap;
+import ml.karmaconfigs.api.common.karma.loader.SubJarLoader;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -20,32 +21,54 @@ GNU LESSER GENERAL PUBLIC LICENSE
  the version number 2.1.]
  */
 
-public final class Main extends JavaPlugin {
+@KarmaPlugin
+public final class Main extends JavaPlugin implements KarmaSource {
 
-    private final static PBTHPlugin plugin = new PBTHPlugin();
+    private final KarmaBootstrap plugin;
+
+    public Main() throws Throwable {
+        String downloadURL = "https://karmaconfigs.github.io/updates/PlayerBTH/assets/" + getDescription().getVersion() + "/PlayerBTH.jar";
+
+        ResourceDownloader downloader = ResourceDownloader.toCache(
+                this,
+                "PlayerBTH.injar",
+                downloadURL,
+                "plugin"
+        );
+        if (!downloader.isDownloaded(downloadURL))
+            downloader.download(downloadURL);
+
+        SubJarLoader loader = new SubJarLoader(getClass().getClassLoader(), downloader.getDestFile());
+        plugin = loader.instantiate("ml.karmaconfigs.playerbth.MainBootstrap", Main.class, this);
+    }
 
     @Override
     public void onEnable() {
-        File dependency = new File(getDataFolder() + "/libs/", "JodaTimeV21010.jar");
-        try {
-            JarInjector injector = new JarInjector(dependency);
-            if (!dependency.exists())
-                injector.download("https://github.com/JodaOrg/joda-time/releases/download/v2.10.10/joda-time-2.10.10.jar");
-
-            if (injector.inject(JavaPlugin.getProvidingPlugin(Main.class))) {
-                plugin.initialize();
-            } else {
-                Console.send(this, "Failed to inject JodaTime dependency", Level.GRAVE);
-                getPluginLoader().disablePlugin(this);
-            }
-        } catch (Throwable ex) {
-            Console.send(this, "Failed to inject JodaTime dependency", Level.GRAVE);
-            getPluginLoader().disablePlugin(this);
-        }
+        plugin.enable();
     }
 
     @Override
     public void onDisable() {
-        plugin.stop();
+        plugin.disable();
+    }
+
+    @Override
+    public String name() {
+        return getDescription().getName();
+    }
+
+    @Override
+    public String version() {
+        return getDescription().getVersion();
+    }
+
+    @Override
+    public String description() {
+        return getDescription().getDescription();
+    }
+
+    @Override
+    public String[] authors() {
+        return getDescription().getAuthors().toArray(new String[0]);
     }
 }

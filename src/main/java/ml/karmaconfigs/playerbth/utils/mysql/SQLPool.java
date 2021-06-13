@@ -2,8 +2,8 @@ package ml.karmaconfigs.playerbth.utils.mysql;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import ml.karmaconfigs.api.bukkit.Console;
-import ml.karmaconfigs.api.common.Level;
+import ml.karmaconfigs.api.common.Console;
+import ml.karmaconfigs.api.common.utils.enums.Level;
 import ml.karmaconfigs.playerbth.PlayerBTH;
 
 import java.sql.Connection;

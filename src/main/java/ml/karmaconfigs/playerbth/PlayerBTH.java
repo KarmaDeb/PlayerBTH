@@ -1,6 +1,6 @@
 package ml.karmaconfigs.playerbth;
 
-import ml.karmaconfigs.api.bukkit.Logger;
+import ml.karmaconfigs.api.common.Logger;
 import ml.karmaconfigs.api.common.utils.StringUtils;
 import org.bukkit.plugin.java.JavaPlugin;
 

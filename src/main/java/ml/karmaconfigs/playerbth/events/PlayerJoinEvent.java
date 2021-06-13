@@ -1,6 +1,5 @@
 package ml.karmaconfigs.playerbth.events;
 
-import ml.karmaconfigs.playerbth.api.BirthdayCelebrateEvent;
 import ml.karmaconfigs.playerbth.PlayerBTH;
 import ml.karmaconfigs.playerbth.utils.birthday.Birthday;
 import ml.karmaconfigs.playerbth.utils.files.Files;
@@ -59,48 +58,42 @@ public class PlayerJoinEvent implements Listener, PlayerBTH, Files {
 
                             if (day == birthday.getDay() && month == birthday.getMonth()) {
                                 if (!user.isCelebrated()) {
-                                    BirthdayCelebrateEvent event = new BirthdayCelebrateEvent(player);
+                                    Player player = e.getPlayer();
 
-                                    plugin.getServer().getPluginManager().callEvent(event);
+                                    for (Player online : plugin.getServer().getOnlinePlayers()) {
+                                        User user = new User(online);
 
-                                    if (!event.isCancelled()) {
-                                        Player player = e.getPlayer();
-
-                                        for (Player online : plugin.getServer().getOnlinePlayers()) {
-                                            User user = new User(online);
-
-                                            if (online != player) {
-                                                if (user.hasNotifications()) {
-                                                    user.sendTitle(messages.birthdayTitle(player, user.getBirthday().getAge()), messages.birthdaySubtitle(player, user.getBirthday().getAge()));
-                                                    user.playSong(config.getSong());
-                                                }
-                                            } else {
+                                        if (online != player) {
+                                            if (user.hasNotifications()) {
                                                 user.sendTitle(messages.birthdayTitle(player, user.getBirthday().getAge()), messages.birthdaySubtitle(player, user.getBirthday().getAge()));
                                                 user.playSong(config.getSong());
                                             }
-                                        }
-
-                                        birthday.setAge(birthday.getAge() + 1);
-                                        user.setBirthday(birthday);
-
-                                        if (config.enableFireWorks()) {
-                                            user.spawnFireworks(config.fireworkAmount());
-                                        }
-
-                                        if (config.enableSong()) {
+                                        } else {
+                                            user.sendTitle(messages.birthdayTitle(player, user.getBirthday().getAge()), messages.birthdaySubtitle(player, user.getBirthday().getAge()));
                                             user.playSong(config.getSong());
                                         }
-
-                                        if (config.giveCake()) {
-                                            Location location = player.getLocation();
-                                            Material type = location.getBlock().getType();
-                                            location.getBlock().setType(Material.CAKE);
-
-                                            plugin.getServer().getScheduler().runTaskLater(plugin, () -> location.getBlock().setType(type), 20 * 5);
-                                        }
-
-                                        user.setCelebrated(false);
                                     }
+
+                                    birthday.setAge(birthday.getAge() + 1);
+                                    user.setBirthday(birthday);
+
+                                    if (config.enableFireWorks()) {
+                                        user.spawnFireworks(config.fireworkAmount());
+                                    }
+
+                                    if (config.enableSong()) {
+                                        user.playSong(config.getSong());
+                                    }
+
+                                    if (config.giveCake()) {
+                                        Location location = player.getLocation();
+                                        Material type = location.getBlock().getType();
+                                        location.getBlock().setType(Material.CAKE);
+
+                                        plugin.getServer().getScheduler().runTaskLater(plugin, () -> location.getBlock().setType(type), 20 * 5);
+                                    }
+
+                                    user.setCelebrated(false);
                                 }
                             }
                         }
