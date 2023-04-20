@@ -1,0 +1,78 @@
+##################################
+#                                #
+#     PlayerBirthday - Karma     #
+#                                #
+#                                #
+#        Celebrate users         #
+#           birthdays            #
+#                                #
+##################################
+
+#Birthday song options
+Song:
+  #Enable song?
+  enabled: true
+  #Song file name
+  Name: Birthday
+
+#Birthday fireworks options
+Firework:
+  #Enable fireworks?
+  enabled: true
+  #Firework's power (speed)
+  power: 2
+  #Fireworks amount
+  amount: 3
+
+#Use the US format for birthday
+#dates. Instead of dd/MM (day/Month), US
+#uses MM/dd (month/day).
+#
+#Please note, this won't change the message placeholders
+#but the command behaviour, instead of asking day/month it will
+#ask month/day
+UsFormat: false
+
+#How and where will
+#player data stored?
+#
+# Available:
+#
+# FILE - MYSQL
+DataSys: FILE
+
+#Update checks interval (in minutes)
+UpdateInterval: 5
+
+#Birthday not set placeholder
+BdNotSet: "&bBirthday not set!"
+
+#Birthday set placeholder
+BdSet: "&bYou have a birthday!"
+
+#MySQL options
+MySQL:
+  #MySQL host
+  Host: localhost
+  #MySQL port (the default is 3306)
+  Port: 3306
+  #MySQL server user account name
+  User: root
+  #MySQL server user account password
+  Password: ""
+  #Database name for the plugin
+  Database: server_database
+  #Name of the table used by the plugin
+  Table: bth_birthday
+  #Enable ssl connection through server
+  SSL: false
+  #MySQL connection options
+  Connection:
+    #Min connections allowed
+    Min: 3
+    #Max connections allowed
+    Max: 10
+    #Connection timeout (in seconds)
+    TimeOut: 40
+    #Connection life time (in seconds)
+    LifeTime: 300

@@ -1,0 +1,12 @@
+("main"
+
+    'UUID' -> {
+        'day' -> ""
+        'month' -> ""
+        'year' -> ""
+        'age' -> ""
+        'celebrated' -> 0
+        'cast' -> true
+        'music' -> true
+    }
+)
